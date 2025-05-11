@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Trophy, UserPlus, Users, Shield, Home, LogOut } from 'lucide-react';
+import { Calendar, Trophy, UserPlus, Users, Shield, Home, LogOut, Menu, X } from 'lucide-react';
 import { useTournament } from '@/contexts/TournamentContext';
 import {
   NavigationMenu,
@@ -11,25 +11,36 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
 
 const Navbar = () => {
   const { currentUser, logoutUser } = useTournament();
   const navigate = useNavigate();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleLogout = async () => {
     await logoutUser();
+    setIsSheetOpen(false);
     navigate('/');
   };
 
   const renderUserLinks = () => {
     if (!currentUser) {
       return (
-        <div className="flex items-center gap-4">
-          <Link to="/login" className="text-white hover:text-red-300 transition-colors">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <Link 
+            to="/login" 
+            className="text-white hover:text-red-300 transition-colors py-2"
+            onClick={() => setIsSheetOpen(false)}
+          >
             Masuk
           </Link>
-          <Link to="/register" className="text-white hover:text-red-300 transition-colors">
+          <Link 
+            to="/register" 
+            className="text-white hover:text-red-300 transition-colors py-2"
+            onClick={() => setIsSheetOpen(false)}
+          >
             Daftar
           </Link>
         </div>
@@ -39,11 +50,18 @@ const Navbar = () => {
     switch (currentUser.role) {
       case 'admin':
         return (
-          <div className="flex items-center gap-4">
-            <Link to="/admin-panel" className="text-red-400 hover:text-red-300 transition-colors font-medium">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <Link 
+              to="/admin-panel" 
+              className="text-red-400 hover:text-red-300 transition-colors font-medium py-2"
+              onClick={() => setIsSheetOpen(false)}
+            >
               Panel Admin
             </Link>
-            <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
+            <button 
+              onClick={handleLogout} 
+              className="text-white hover:text-red-300 transition-colors flex items-center gap-1 py-2"
+            >
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
             </button>
@@ -52,11 +70,18 @@ const Navbar = () => {
 
       case 'judge':
         return (
-          <div className="flex items-center gap-4">
-            <Link to="/judge-dashboard" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <Link 
+              to="/judge-dashboard" 
+              className="text-blue-400 hover:text-blue-300 transition-colors font-medium py-2"
+              onClick={() => setIsSheetOpen(false)}
+            >
               Panel Hakim
             </Link>
-            <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
+            <button 
+              onClick={handleLogout} 
+              className="text-white hover:text-red-300 transition-colors flex items-center gap-1 py-2"
+            >
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
             </button>
@@ -65,11 +90,18 @@ const Navbar = () => {
 
       case 'participant':
         return (
-          <div className="flex items-center gap-4">
-            <Link to="/participant-dashboard" className="text-green-400 hover:text-green-300 transition-colors font-medium">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <Link 
+              to="/participant-dashboard" 
+              className="text-green-400 hover:text-green-300 transition-colors font-medium py-2"
+              onClick={() => setIsSheetOpen(false)}
+            >
               Dashboard Peserta
             </Link>
-            <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
+            <button 
+              onClick={handleLogout} 
+              className="text-white hover:text-red-300 transition-colors flex items-center gap-1 py-2"
+            >
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
             </button>
@@ -78,13 +110,74 @@ const Navbar = () => {
 
       default:
         return (
-          <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
+          <button 
+            onClick={handleLogout} 
+            className="text-white hover:text-red-300 transition-colors flex items-center gap-1 py-2"
+          >
             <LogOut className="h-4 w-4" />
             <span>Keluar</span>
           </button>
         );
     }
   };
+
+  const mobileMenuItems = (
+    <div className="flex flex-col space-y-4 pt-4 pb-8 px-4">
+      <Link 
+        to="/" 
+        className="text-white hover:text-red-300 flex items-center gap-2 py-2"
+        onClick={() => setIsSheetOpen(false)}
+      >
+        <Home className="h-5 w-5" />
+        <span>Beranda</span>
+      </Link>
+      <Link 
+        to="/dashboard" 
+        className="text-white hover:text-red-300 flex items-center gap-2 py-2"
+        onClick={() => setIsSheetOpen(false)}
+      >
+        <Trophy className="h-5 w-5" />
+        <span>Dashboard</span>
+      </Link>
+      <Link 
+        to="/brackets" 
+        className="text-white hover:text-red-300 flex items-center gap-2 py-2"
+        onClick={() => setIsSheetOpen(false)}
+      >
+        <Calendar className="h-5 w-5" />
+        <span>Brackets</span>
+      </Link>
+      <Link 
+        to="/registration" 
+        className="text-white hover:text-red-300 flex items-center gap-2 py-2"
+        onClick={() => setIsSheetOpen(false)}
+      >
+        <UserPlus className="h-5 w-5" />
+        <span>Pendaftaran</span>
+      </Link>
+      <Link 
+        to="/organizations" 
+        className="text-white hover:text-red-300 flex items-center gap-2 py-2"
+        onClick={() => setIsSheetOpen(false)}
+      >
+        <Shield className="h-5 w-5" />
+        <span>Organisasi</span>
+      </Link>
+      {currentUser?.role === 'judge' && (
+        <Link 
+          to="/judge-dashboard" 
+          className="text-blue-400 hover:text-blue-300 flex items-center gap-2 py-2"
+          onClick={() => setIsSheetOpen(false)}
+        >
+          <Users className="h-5 w-5" />
+          <span>Panel Hakim</span>
+        </Link>
+      )}
+      <div className="border-t border-gray-700 pt-4 mt-4">
+        {renderUserLinks()}
+      </div>
+    </div>
+  );
 
   return (
     <nav className="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
@@ -175,13 +268,24 @@ const Navbar = () => {
             {renderUserLinks()}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu */}
           <div className="md:hidden">
-            <button className="text-white">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-              </svg>
-            </button>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <button className="text-white p-2">
+                  <Menu className="w-6 h-6" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="bg-gray-900 border-gray-800 text-white p-0">
+                <div className="flex items-center justify-between p-4 border-b border-gray-800">
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-6 w-6 text-red-500" />
+                    <span className="font-bold text-lg">Pencak Silat</span>
+                  </div>
+                </div>
+                {mobileMenuItems}
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
