@@ -32,65 +32,74 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { id } from 'date-fns/locale';
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
-    message: "Full name must be at least 2 characters.",
+    message: "Nama lengkap minimal 2 karakter.",
   }),
-  gender: z.enum(["Male", "Female"], {
-    required_error: "Please select gender category.",
+  gender: z.enum(["Laki-laki", "Perempuan"], {
+    required_error: "Silakan pilih kategori gender.",
+  }),
+  dateOfBirth: z.date({
+    required_error: "Silakan pilih tanggal lahir.",
   }),
   ageCategory: z.string({
-    required_error: "Please select age category.",
+    required_error: "Silakan pilih kategori umur.",
   }),
   weightCategory: z.string({
-    required_error: "Please select weight category.",
+    required_error: "Silakan pilih kategori berat.",
   }),
   organization: z.string({
-    required_error: "Please select an organization.",
+    required_error: "Silakan pilih organisasi.",
   }),
   branch: z.string({
-    required_error: "Please select a branch.",
+    required_error: "Silakan pilih cabang.",
   }),
   subBranch: z.string({
-    required_error: "Please select a sub-branch.",
+    required_error: "Silakan pilih sub-cabang.",
   }),
   region: z.string().min(2, {
-    message: "Region must be at least 2 characters.",
+    message: "Daerah minimal 2 karakter.",
   }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 const ageCategories = [
-  "Under 12",
-  "12-15",
-  "15-18",
-  "18-21",
-  "21-30",
-  "Over 30",
+  "Di bawah 12 tahun",
+  "12-15 tahun",
+  "15-18 tahun",
+  "18-21 tahun",
+  "21-30 tahun",
+  "Di atas 30 tahun",
 ];
 
 const weightCategoriesMale = [
-  "Class A (45-50 kg)",
-  "Class B (50-55 kg)",
-  "Class C (55-60 kg)",
-  "Class D (60-65 kg)",
-  "Class E (65-70 kg)",
-  "Class F (70-75 kg)",
-  "Class G (75-80 kg)",
-  "Class H (80-85 kg)",
-  "Class I (85-90 kg)",
-  "Class J (90+ kg)",
+  "Kelas A (45-50 kg)",
+  "Kelas B (50-55 kg)",
+  "Kelas C (55-60 kg)",
+  "Kelas D (60-65 kg)",
+  "Kelas E (65-70 kg)",
+  "Kelas F (70-75 kg)",
+  "Kelas G (75-80 kg)",
+  "Kelas H (80-85 kg)",
+  "Kelas I (85-90 kg)",
+  "Kelas J (90+ kg)",
 ];
 
 const weightCategoriesFemale = [
-  "Class A (45-50 kg)",
-  "Class B (50-55 kg)",
-  "Class C (55-60 kg)",
-  "Class D (60-65 kg)",
-  "Class E (65-70 kg)",
-  "Class F (70+ kg)",
+  "Kelas A (45-50 kg)",
+  "Kelas B (50-55 kg)",
+  "Kelas C (55-60 kg)",
+  "Kelas D (60-65 kg)",
+  "Kelas E (65-70 kg)",
+  "Kelas F (70+ kg)",
 ];
 
 const Registration = () => {
@@ -101,6 +110,7 @@ const Registration = () => {
     defaultValues: {
       fullName: "",
       gender: undefined,
+      dateOfBirth: undefined,
       ageCategory: "",
       weightCategory: "",
       organization: "",
@@ -120,19 +130,18 @@ const Registration = () => {
   const selectedBranch = form.watch("branch");
   const subBranches = branches.find(branch => branch.name === selectedBranch)?.subBranches || [];
 
-  const weightCategories = selectedGender === "Male" 
+  const weightCategories = selectedGender === "Laki-laki" 
     ? weightCategoriesMale 
-    : selectedGender === "Female" 
+    : selectedGender === "Perempuan" 
       ? weightCategoriesFemale 
       : [];
 
   function onSubmit(values: FormValues) {
-    // The form validation ensures all fields are filled
-    // Create new participant with required fields (non-optional)
     const newParticipant = {
       id: uuidv4(),
       fullName: values.fullName,
       gender: values.gender,
+      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
       ageCategory: values.ageCategory,
       weightCategory: values.weightCategory,
       organization: values.organization,
@@ -142,18 +151,18 @@ const Registration = () => {
     };
     
     addParticipant(newParticipant);
-    toast.success("Participant registered successfully!");
+    toast.success("Peserta berhasil terdaftar!");
     form.reset();
   }
 
   return (
     <MainLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <Card className="border-t-4 border-t-red-600">
           <CardHeader>
-            <CardTitle className="text-2xl">Participant Registration</CardTitle>
+            <CardTitle className="text-2xl">Pendaftaran Peserta</CardTitle>
             <CardDescription>
-              Register a new participant for the tournament
+              Daftarkan peserta baru untuk turnamen
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -164,9 +173,9 @@ const Registration = () => {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel>Nama Lengkap</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter participant's full name" {...field} />
+                        <Input placeholder="Masukkan nama lengkap peserta" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,19 +188,19 @@ const Registration = () => {
                     name="gender"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Gender Category</FormLabel>
+                        <FormLabel>Kategori Gender</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select gender" />
+                              <SelectValue placeholder="Pilih jenis kelamin" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Male">Male</SelectItem>
-                            <SelectItem value="Female">Female</SelectItem>
+                            <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                            <SelectItem value="Perempuan">Perempuan</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -201,17 +210,62 @@ const Registration = () => {
 
                   <FormField
                     control={form.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Tanggal Lahir</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP", { locale: id })
+                                ) : (
+                                  <span>Pilih tanggal</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                              locale={id}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
                     name="ageCategory"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Age Category</FormLabel>
+                        <FormLabel>Kategori Umur</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select age category" />
+                              <SelectValue placeholder="Pilih kategori umur" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -226,36 +280,36 @@ const Registration = () => {
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <FormField
-                  control={form.control}
-                  name="weightCategory"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Weight Category</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={!selectedGender}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={selectedGender ? "Select weight category" : "Select gender first"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {weightCategories.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="weightCategory"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kategori Berat</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          disabled={!selectedGender}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={selectedGender ? "Pilih kategori berat" : "Pilih gender dahulu"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {weightCategories.map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
@@ -263,7 +317,7 @@ const Registration = () => {
                     name="organization"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Organization</FormLabel>
+                        <FormLabel>Organisasi</FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -274,7 +328,7 @@ const Registration = () => {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select organization" />
+                              <SelectValue placeholder="Pilih organisasi" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -295,7 +349,7 @@ const Registration = () => {
                     name="branch"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Branch</FormLabel>
+                        <FormLabel>Cabang</FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -306,7 +360,7 @@ const Registration = () => {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder={selectedOrg ? "Select branch" : "Select org first"} />
+                              <SelectValue placeholder={selectedOrg ? "Pilih cabang" : "Pilih organisasi dahulu"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -327,7 +381,7 @@ const Registration = () => {
                     name="subBranch"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Sub-branch</FormLabel>
+                        <FormLabel>Sub-cabang</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -335,7 +389,7 @@ const Registration = () => {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder={selectedBranch ? "Select sub-branch" : "Select branch first"} />
+                              <SelectValue placeholder={selectedBranch ? "Pilih sub-cabang" : "Pilih cabang dahulu"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -357,9 +411,9 @@ const Registration = () => {
                   name="region"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Region</FormLabel>
+                      <FormLabel>Daerah</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter participant's region" {...field} />
+                        <Input placeholder="Masukkan daerah peserta" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -367,7 +421,7 @@ const Registration = () => {
                 />
 
                 <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
-                  Register Participant
+                  Daftarkan Peserta
                 </Button>
               </form>
             </Form>

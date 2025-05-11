@@ -9,7 +9,175 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      judges: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          judge_number: number
+          password: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          judge_number: number
+          password: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          judge_number?: number
+          password?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          completed: boolean | null
+          created_at: string
+          id: string
+          match_number: number
+          participant1_id: string | null
+          participant2_id: string | null
+          round_number: number
+          winner_id: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          match_number: number
+          participant1_id?: string | null
+          participant2_id?: string | null
+          round_number: number
+          winner_id?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          match_number?: number
+          participant1_id?: string | null
+          participant2_id?: string | null
+          round_number?: number
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_participant1_id_fkey"
+            columns: ["participant1_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_participant2_id_fkey"
+            columns: ["participant2_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participants: {
+        Row: {
+          age_category: string
+          branch: string
+          created_at: string
+          date_of_birth: string
+          full_name: string
+          gender: string
+          id: string
+          organization: string
+          region: string
+          sub_branch: string
+          weight_category: string
+        }
+        Insert: {
+          age_category: string
+          branch: string
+          created_at?: string
+          date_of_birth: string
+          full_name: string
+          gender: string
+          id?: string
+          organization: string
+          region: string
+          sub_branch: string
+          weight_category: string
+        }
+        Update: {
+          age_category?: string
+          branch?: string
+          created_at?: string
+          date_of_birth?: string
+          full_name?: string
+          gender?: string
+          id?: string
+          organization?: string
+          region?: string
+          sub_branch?: string
+          weight_category?: string
+        }
+        Relationships: []
+      }
+      round_scores: {
+        Row: {
+          created_at: string
+          id: string
+          judge_id: string
+          match_id: string
+          participant1_score: number
+          participant2_score: number
+          round_number: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          judge_id: string
+          match_id: string
+          participant1_score: number
+          participant2_score: number
+          round_number: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          judge_id?: string
+          match_id?: string
+          participant1_score?: number
+          participant2_score?: number
+          round_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_scores_judge_id_fkey"
+            columns: ["judge_id"]
+            isOneToOne: false
+            referencedRelation: "judges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "round_scores_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminPanel = () => {
   const { participants, matches, updateMatch, currentMatchId, setCurrentMatchId } = useTournament();
@@ -33,7 +34,34 @@ const AdminPanel = () => {
     if (currentMatchId && !selectedMatch) {
       setSelectedMatch(currentMatchId);
     }
-  }, [currentMatchId, selectedMatch]);
+    
+    // Load matches from Supabase
+    const fetchMatches = async () => {
+      const { data, error } = await supabase.from('matches').select('*');
+      if (error) {
+        console.error("Error fetching matches:", error);
+        return;
+      }
+      
+      if (data) {
+        // Convert Supabase data format to our app's format
+        data.forEach(match => {
+          updateMatch({
+            id: match.id,
+            participant1Id: match.participant1_id,
+            participant2Id: match.participant2_id,
+            rounds: [],
+            winnerId: match.winner_id,
+            matchNumber: match.match_number,
+            roundNumber: match.round_number,
+            completed: match.completed,
+          });
+        });
+      }
+    };
+    
+    fetchMatches();
+  }, [currentMatchId, selectedMatch, updateMatch]);
 
   useEffect(() => {
     if (timerActive && !roundBreak) {
@@ -45,11 +73,11 @@ const AdminPanel = () => {
         // Time's up for this round
         setTimerActive(false);
         if (currentRound < 3) {
-          toast.info(`Round ${currentRound} finished! Starting break`);
+          toast.info(`Ronde ${currentRound} selesai! Memulai istirahat`);
           setRoundBreak(true);
           setBreakTime(30);
         } else {
-          toast.info("Match finished!");
+          toast.info("Pertandingan selesai!");
           completeMatch();
         }
       }
@@ -64,7 +92,7 @@ const AdminPanel = () => {
         setCurrentRound(currentRound + 1);
         setTime(60);
         setTimerActive(true);
-        toast.info(`Round ${currentRound + 1} started!`);
+        toast.info(`Ronde ${currentRound + 1} dimulai!`);
       }
     }
 
@@ -77,13 +105,13 @@ const AdminPanel = () => {
 
   const startTimer = () => {
     if (!selectedMatch) {
-      toast.error("Please select a match first");
+      toast.error("Silakan pilih pertandingan terlebih dahulu");
       return;
     }
     
     setTimerActive(true);
     setCurrentMatchId(selectedMatch);
-    toast.success(`Round ${currentRound} started!`);
+    toast.success(`Ronde ${currentRound} dimulai!`);
   };
 
   const pauseTimer = () => {
@@ -103,12 +131,12 @@ const AdminPanel = () => {
       setRoundBreak(true);
       setBreakTime(30);
     } else {
-      toast.info("This is the final round!");
+      toast.info("Ini adalah ronde terakhir!");
       completeMatch();
     }
   };
 
-  const completeMatch = () => {
+  const completeMatch = async () => {
     if (!selectedMatch) return;
     
     const match = matches.find(m => m.id === selectedMatch);
@@ -143,7 +171,7 @@ const AdminPanel = () => {
       winnerId = match.participant2Id;
     } else {
       // It's a draw - in real tournament you'd need tie-breaking rules
-      toast.info("Match ended in a draw!");
+      toast.info("Pertandingan berakhir seri!");
     }
     
     // Update match with winner and completed status
@@ -154,13 +182,28 @@ const AdminPanel = () => {
     };
     
     updateMatch(updatedMatch);
+    
+    // Update in Supabase
+    const { error } = await supabase
+      .from('matches')
+      .update({
+        winner_id: winnerId,
+        completed: true
+      })
+      .eq('id', match.id);
+      
+    if (error) {
+      console.error('Error updating match in database:', error);
+      toast.error("Gagal menyimpan hasil pertandingan ke database");
+    }
+    
     setTimerActive(false);
     setSelectedMatch("");
     setCurrentMatchId(null);
     setCurrentRound(1);
     setTime(60);
     
-    toast.success("Match completed and winner determined!");
+    toast.success("Pertandingan selesai dan pemenang ditentukan!");
   };
 
   const currentMatchObj = matches.find(match => match.id === selectedMatch);
@@ -174,46 +217,68 @@ const AdminPanel = () => {
     : null;
 
   // Create a demo match if needed
-  const createDemoMatch = () => {
+  const createDemoMatch = async () => {
     if (participants.length < 2) {
-      toast.error("Need at least 2 participants to create a demo match");
+      toast.error("Butuh minimal 2 peserta untuk membuat pertandingan demo");
       return;
     }
 
     const participant1 = participants[0];
     const participant2 = participants[1];
     
+    const matchNumber = matches.length + 1;
+    
+    // Create in Supabase first
+    const { data, error } = await supabase
+      .from('matches')
+      .insert({
+        participant1_id: participant1.id,
+        participant2_id: participant2.id,
+        match_number: matchNumber,
+        round_number: 1,
+        completed: false
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating match in database:', error);
+      toast.error("Gagal membuat pertandingan demo di database");
+      return;
+    }
+    
+    // Add to local state
     const newMatch = {
-      id: uuidv4(),
+      id: data.id,
       participant1Id: participant1.id,
       participant2Id: participant2.id,
       rounds: [],
       winnerId: null,
-      matchNumber: matches.length + 1,
+      matchNumber: matchNumber,
       roundNumber: 1, // first round of tournament
       completed: false
     };
     
     updateMatch(newMatch);
     setSelectedMatch(newMatch.id);
-    toast.success("Demo match created!");
+    toast.success("Pertandingan demo dibuat!");
   };
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <Tabs defaultValue="match-control">
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="match-control" className="flex-1">Match Control</TabsTrigger>
-            <TabsTrigger value="tournament-management" className="flex-1">Tournament Management</TabsTrigger>
+            <TabsTrigger value="match-control" className="flex-1">Pengaturan Pertandingan</TabsTrigger>
+            <TabsTrigger value="tournament-management" className="flex-1">Manajemen Turnamen</TabsTrigger>
           </TabsList>
           
           <TabsContent value="match-control">
             <Card className="border-t-4 border-t-red-600 mb-6">
               <CardHeader className="pb-2">
-                <CardTitle className="text-2xl">Match Control Panel</CardTitle>
+                <CardTitle className="text-2xl">Panel Pengaturan Pertandingan</CardTitle>
                 <p className="text-gray-500">
-                  Control tournament matches and timing
+                  Kontrol pertandingan turnamen dan pengaturan waktu
                 </p>
               </CardHeader>
               
@@ -221,26 +286,26 @@ const AdminPanel = () => {
                 <div className="space-y-6">
                   {/* Match Selection */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Select Match</label>
-                    <div className="flex gap-2">
+                    <label className="block text-sm font-medium mb-2">Pilih Pertandingan</label>
+                    <div className="flex flex-col md:flex-row gap-2">
                       <Select 
                         value={selectedMatch} 
                         onValueChange={setSelectedMatch}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a match" />
+                          <SelectValue placeholder="Pilih pertandingan" />
                         </SelectTrigger>
                         <SelectContent>
                           {matches.filter(m => !m.completed).map((match) => (
                             <SelectItem key={match.id} value={match.id}>
-                              Match #{match.matchNumber}
+                              Pertandingan #{match.matchNumber}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       
-                      <Button variant="outline" onClick={createDemoMatch}>
-                        Create Demo Match
+                      <Button variant="outline" onClick={createDemoMatch} className="md:w-auto w-full">
+                        Buat Pertandingan Demo
                       </Button>
                     </div>
                   </div>
@@ -248,17 +313,17 @@ const AdminPanel = () => {
                   {/* Match Info */}
                   {currentMatchObj && (
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-semibold mb-2">Match #{currentMatchObj.matchNumber}</h3>
+                      <h3 className="font-semibold mb-2">Pertandingan #{currentMatchObj.matchNumber}</h3>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div className="border p-3 rounded-lg bg-white">
-                          <span className="text-xs text-gray-500 block mb-1">RED CORNER</span>
-                          <h3 className="font-bold">{participant1?.fullName || "TBD"}</h3>
+                          <span className="text-xs text-gray-500 block mb-1">SUDUT MERAH</span>
+                          <h3 className="font-bold">{participant1?.fullName || "Belum ditentukan"}</h3>
                         </div>
                         
                         <div className="border p-3 rounded-lg bg-white">
-                          <span className="text-xs text-gray-500 block mb-1">BLUE CORNER</span>
-                          <h3 className="font-bold">{participant2?.fullName || "TBD"}</h3>
+                          <span className="text-xs text-gray-500 block mb-1">SUDUT BIRU</span>
+                          <h3 className="font-bold">{participant2?.fullName || "Belum ditentukan"}</h3>
                         </div>
                       </div>
                     </div>
@@ -269,11 +334,11 @@ const AdminPanel = () => {
                     <div className="mb-4">
                       {roundBreak ? (
                         <Badge variant="outline" className="text-amber-400 border-amber-400 text-sm px-3 py-1">
-                          BREAK TIME
+                          WAKTU ISTIRAHAT
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-green-400 border-green-400 text-sm px-3 py-1">
-                          ROUND {currentRound} of 3
+                          RONDE {currentRound} dari 3
                         </Badge>
                       )}
                     </div>
@@ -289,11 +354,11 @@ const AdminPanel = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {timerActive ? (
                       <Button onClick={pauseTimer} variant="outline" className="border-amber-500 text-amber-500">
-                        Pause
+                        Jeda
                       </Button>
                     ) : (
                       <Button onClick={startTimer} className="bg-green-600 hover:bg-green-700">
-                        Start
+                        Mulai
                       </Button>
                     )}
                     
@@ -302,11 +367,11 @@ const AdminPanel = () => {
                     </Button>
                     
                     <Button onClick={nextRound} variant="outline">
-                      Next Round
+                      Ronde Berikutnya
                     </Button>
                     
                     <Button onClick={completeMatch} variant="destructive">
-                      End Match
+                      Akhiri Pertandingan
                     </Button>
                   </div>
                 </div>
@@ -316,12 +381,12 @@ const AdminPanel = () => {
             {/* Match Status */}
             <Card>
               <CardHeader>
-                <CardTitle>Match Status</CardTitle>
+                <CardTitle>Status Pertandingan</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {matches.length === 0 ? (
-                    <p className="text-gray-500">No matches scheduled yet</p>
+                    <p className="text-gray-500">Belum ada pertandingan yang dijadwalkan</p>
                   ) : (
                     matches.map((match) => {
                       const p1 = participants.find(p => p.id === match.participant1Id);
@@ -330,19 +395,19 @@ const AdminPanel = () => {
                       return (
                         <div key={match.id} className="flex justify-between items-center border p-3 rounded-md">
                           <div>
-                            <span className="font-medium">Match #{match.matchNumber}</span>
+                            <span className="font-medium">Pertandingan #{match.matchNumber}</span>
                             <div className="text-sm text-gray-600">
-                              {p1?.fullName || "TBD"} vs {p2?.fullName || "TBD"}
+                              {p1?.fullName || "Belum ditentukan"} vs {p2?.fullName || "Belum ditentukan"}
                             </div>
                           </div>
                           
                           <div>
                             {match.completed ? (
-                              <Badge className="bg-green-600">Completed</Badge>
+                              <Badge className="bg-green-600">Selesai</Badge>
                             ) : match.id === currentMatchId ? (
-                              <Badge className="bg-blue-600">In Progress</Badge>
+                              <Badge className="bg-blue-600">Berlangsung</Badge>
                             ) : (
-                              <Badge variant="outline">Pending</Badge>
+                              <Badge variant="outline">Tertunda</Badge>
                             )}
                           </div>
                         </div>
@@ -357,22 +422,22 @@ const AdminPanel = () => {
           <TabsContent value="tournament-management">
             <Card>
               <CardHeader>
-                <CardTitle>Tournament Management</CardTitle>
+                <CardTitle>Manajemen Turnamen</CardTitle>
                 <p className="text-gray-500">
-                  Manage brackets and tournament structure
+                  Kelola jadwal dan struktur turnamen
                 </p>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-12">
                   <h3 className="text-xl font-semibold mb-3">
-                    Connect to Supabase for Full Tournament Management
+                    Fitur lengkap manajemen turnamen
                   </h3>
                   <p className="text-gray-500 mb-6 max-w-xl mx-auto">
-                    To enable full tournament management features including bracket generation, 
-                    data persistence, and user authentication, please connect this project to Supabase.
+                    Data peserta dan pertandingan sudah otomatis tersimpan ke database Supabase.
+                    Anda dapat mengelola seluruh turnamen melalui panel ini.
                   </p>
                   <Button className="bg-emerald-600 hover:bg-emerald-700">
-                    Connect to Supabase
+                    Buat Bagan Pertandingan
                   </Button>
                 </div>
               </CardContent>

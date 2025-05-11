@@ -12,6 +12,8 @@ import Registration from "./pages/Registration";
 import JudgePanel from "./pages/JudgePanel";
 import AdminPanel from "./pages/AdminPanel";
 import Organizations from "./pages/Organizations";
+import JudgeLogin from "./pages/JudgeLogin";
+import JudgeDashboard from "./pages/JudgeDashboard";
 import { TournamentProvider } from "./contexts/TournamentContext";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
             <Route path="/judge-panel" element={<JudgePanel />} />
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/organizations" element={<Organizations />} />
+            <Route path="/judge-login" element={<JudgeLogin />} />
+            <Route path="/judge-dashboard" element={<JudgeDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
