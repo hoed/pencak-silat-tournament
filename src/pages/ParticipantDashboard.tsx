@@ -108,13 +108,13 @@ const ParticipantDashboard = () => {
               <div className="space-y-3">
                 {participantMatches.map((match) => {
                   const opponent = match.participant1Id === currentUser?.id
-                    ? participants.find(p => p.id === match.participant2Id)?.fullName || "TBD"
-                    : participants.find(p => p.id === match.participant1Id)?.fullName || "TBD";
+                    ? participants.find(p => p.id === match.participant2Id)?.fullName || "Belum ditentukan"
+                    : participants.find(p => p.id === match.participant1Id)?.fullName || "Belum ditentukan";
                   
                   return (
                     <div key={match.id} className="p-4 border rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-semibold">Match #{match.matchNumber}</span>
+                        <span className="font-semibold">Pertandingan #{match.matchNumber}</span>
                         {match.completed ? (
                           <Badge className="bg-green-600">Selesai</Badge>
                         ) : (
@@ -129,7 +129,7 @@ const ParticipantDashboard = () => {
                         <div className="mt-2 flex items-center">
                           <Trophy className="h-4 w-4 text-amber-500 mr-1" />
                           <span className="text-amber-600 font-medium">
-                            {match.winnerId === currentUser?.id ? "Anda menang!" : "Opponent wins"}
+                            {match.winnerId === currentUser?.id ? "Anda menang!" : "Lawan menang"}
                           </span>
                         </div>
                       )}

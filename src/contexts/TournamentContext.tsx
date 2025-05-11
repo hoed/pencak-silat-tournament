@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 // Types
 export type UserRole = 'admin' | 'judge' | 'participant';
@@ -188,7 +189,7 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
         const formattedData: Participant[] = data.map(p => ({
           id: p.id,
           fullName: p.full_name,
-          gender: p.gender,
+          gender: p.gender as "Laki-laki" | "Perempuan", // Fixed type casting here
           dateOfBirth: p.date_of_birth,
           ageCategory: p.age_category,
           weightCategory: p.weight_category,

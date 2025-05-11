@@ -1,5 +1,6 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTournament } from "@/contexts/TournamentContext";
@@ -10,8 +11,16 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { Shield, Trophy, Users, Timer } from "lucide-react";
 
 const Dashboard = () => {
-  const { participants, matches, organizations, currentUser } = useTournament();
+  const { participants, matches, organizations, currentUser, logoutUser } = useTournament();
+  const navigate = useNavigate();
   
+  // Redirect unauthenticated users
+  useEffect(() => {
+    if (!currentUser) {
+      navigate("/login");
+    }
+  }, [currentUser, navigate]);
+
   // Calculate statistics
   const completedMatches = matches.filter(match => match.completed);
   const pendingMatches = matches.filter(match => !match.completed);
@@ -54,9 +63,22 @@ const Dashboard = () => {
   
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6B6B', '#6BCB77', '#4D96FF'];
 
+  const handleLogout = async () => {
+    await logoutUser();
+    navigate("/login");
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
+        {/* Header with Logout */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <Button onClick={handleLogout} variant="outline" size="sm">
+            Keluar
+          </Button>
+        </div>
+        
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -209,14 +231,14 @@ const Dashboard = () => {
                       <div className="flex items-center space-x-2">
                         <span className="text-gray-500">#{match.matchNumber}</span>
                         <span>
-                          {participant1?.fullName || "TBD"} vs {participant2?.fullName || "TBD"}
+                          {participant1?.fullName || "Belum ditentukan"} vs {participant2?.fullName || "Belum ditentukan"}
                         </span>
                       </div>
                       
                       {match.completed ? (
                         <Badge className="bg-green-600">Selesai</Badge>
                       ) : (
-                        <Badge variant="outline">Pending</Badge>
+                        <Badge variant="outline">Belum Selesai</Badge>
                       )}
                     </div>
                   );

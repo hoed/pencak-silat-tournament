@@ -110,7 +110,7 @@ const Login = () => {
               
               <div className="mt-4 text-center text-sm text-gray-500">
                 <p>
-                  Demo Akun:<br />
+                  Akun Demo:<br />
                   Admin: admin@admin.com / password<br />
                   Hakim: juri@juri.com / password<br />
                   Peserta: peserta@peserta.com / password

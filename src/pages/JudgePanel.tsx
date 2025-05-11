@@ -5,112 +5,46 @@ import MainLayout from "@/components/Layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import { useTournament } from "@/contexts/TournamentContext";
 
 const JudgePanel = () => {
   const navigate = useNavigate();
-  const { participants, matches, updateMatch, currentMatchId, judges } = useTournament();
-  const [judgeId, setJudgeId] = useState("1");
-  const [participant1Score, setParticipant1Score] = useState("");
-  const [participant2Score, setParticipant2Score] = useState("");
-  const [currentRound, setCurrentRound] = useState(1);
+  const { judges, currentUser, logoutUser } = useTournament();
   
-  const currentMatch = matches.find(match => match.id === currentMatchId);
-  
-  const participant1 = currentMatch?.participant1Id
-    ? participants.find(p => p.id === currentMatch.participant1Id)
-    : null;
-  
-  const participant2 = currentMatch?.participant2Id
-    ? participants.find(p => p.id === currentMatch.participant2Id)
-    : null;
-
   useEffect(() => {
+    // Redirect if not logged in or not an admin
+    if (!currentUser || currentUser.role !== 'admin') {
+      navigate("/login");
+      return;
+    }
+    
     // Redirect judges to their dashboard
     const judgeInStorage = localStorage.getItem('currentJudge');
     if (judgeInStorage) {
       navigate('/judge-dashboard');
     }
-  }, [navigate]);
-
-  const submitScore = () => {
-    if (!currentMatch) {
-      toast.error("Tidak ada pertandingan aktif yang dipilih");
-      return;
-    }
-    
-    if (!participant1Score || !participant2Score) {
-      toast.error("Silakan masukkan nilai untuk kedua peserta");
-      return;
-    }
-    
-    const p1Score = parseFloat(participant1Score);
-    const p2Score = parseFloat(participant2Score);
-    
-    if (isNaN(p1Score) || isNaN(p2Score) || p1Score < 0 || p1Score > 10 || p2Score < 0 || p2Score > 10) {
-      toast.error("Nilai harus antara 0 dan 10");
-      return;
-    }
-    
-    // Find existing round or create a new one
-    let matchRounds = [...currentMatch.rounds];
-    let currentRoundObj = matchRounds.find(r => r.number === currentRound);
-    
-    if (!currentRoundObj) {
-      currentRoundObj = {
-        id: `round-${currentMatch.id}-${currentRound}`,
-        number: currentRound,
-        scores: {}
-      };
-      matchRounds.push(currentRoundObj);
-    }
-    
-    // Update the scores for this judge
-    const updatedRounds = matchRounds.map(round => {
-      if (round.number === currentRound) {
-        return {
-          ...round,
-          scores: {
-            ...round.scores,
-            [`${judgeId}-participant1`]: p1Score,
-            [`${judgeId}-participant2`]: p2Score
-          }
-        };
-      }
-      return round;
-    });
-    
-    // Update the match with new rounds data
-    const updatedMatch = {
-      ...currentMatch,
-      rounds: updatedRounds
-    };
-    
-    updateMatch(updatedMatch);
-    toast.success(`Nilai untuk Ronde ${currentRound} berhasil disimpan`);
-    
-    // Clear score inputs
-    setParticipant1Score("");
-    setParticipant2Score("");
-  };
+  }, [currentUser, navigate]);
 
   const handleJudgeLogin = () => {
     navigate("/judge-login");
+  };
+  
+  const handleLogout = async () => {
+    await logoutUser();
+    navigate("/login");
   };
 
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Panel Hakim</h1>
+          <Button onClick={handleLogout} variant="outline" size="sm">
+            Keluar
+          </Button>
+        </div>
+        
         <Card className="mb-6 border-t-4 border-t-blue-600">
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl">Panel Penilaian Hakim</CardTitle>
@@ -150,6 +84,7 @@ const JudgePanel = () => {
                         Hakim #{judge.judgeNumber}
                       </div>
                     </div>
+                    <Badge>Aktif</Badge>
                   </div>
                 ))
               )}

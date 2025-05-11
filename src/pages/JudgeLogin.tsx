@@ -83,6 +83,15 @@ const JudgeLogin = () => {
               >
                 {isLoading ? "Sedang Masuk..." : "Masuk"}
               </Button>
+              
+              <div className="mt-4 text-center text-sm text-gray-500">
+                <p>
+                  Akun Demo:<br />
+                  hakim1 / password123<br />
+                  hakim2 / password123<br />
+                  hakim3 / password123
+                </p>
+              </div>
             </form>
           </CardContent>
         </Card>
