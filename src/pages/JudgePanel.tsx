@@ -7,10 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useTournament } from "@/contexts/TournamentContext";
+import { insertSampleData, clearAllData } from "@/services/SampleDataService";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const JudgePanel = () => {
   const navigate = useNavigate();
-  const { judges, currentUser, logoutUser } = useTournament();
+  const { judges, currentUser, logoutUser, fetchJudges, fetchParticipants, fetchMatches } = useTournament();
+  const [loading, setLoading] = useState(false);
   
   useEffect(() => {
     // Redirect if not logged in or not an admin
@@ -33,6 +42,52 @@ const JudgePanel = () => {
   const handleLogout = async () => {
     await logoutUser();
     navigate("/login");
+  };
+
+  const handleInsertSampleData = async () => {
+    setLoading(true);
+    try {
+      const result = await insertSampleData();
+      
+      if (result.success) {
+        toast.success("Data sampel berhasil dimasukkan");
+        
+        // Refresh data in the context
+        await fetchJudges();
+        await fetchParticipants();
+        await fetchMatches();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat memasukkan data sampel");
+      console.error("Error inserting sample data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearData = async () => {
+    setLoading(true);
+    try {
+      const result = await clearAllData();
+      
+      if (result.success) {
+        toast.success("Data berhasil dihapus");
+        
+        // Refresh data in the context
+        await fetchJudges();
+        await fetchParticipants();
+        await fetchMatches();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat menghapus data");
+      console.error("Error clearing data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,6 +118,26 @@ const JudgePanel = () => {
               <Button onClick={handleJudgeLogin} className="bg-blue-600 hover:bg-blue-700">
                 Login Hakim
               </Button>
+            </div>
+            
+            <Separator className="my-6" />
+            
+            <div className="flex justify-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    Data & Pengujian
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white">
+                  <DropdownMenuItem onClick={handleInsertSampleData} disabled={loading}>
+                    Masukkan Data Sampel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleClearData} disabled={loading}>
+                    Hapus Semua Data
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardContent>
         </Card>

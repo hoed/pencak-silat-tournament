@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import MainLayout from "@/components/Layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +15,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  ResponsiveContainer,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 const AdminPanel = () => {
   const { participants, matches, updateMatch, currentMatchId, setCurrentMatchId } = useTournament();
@@ -26,6 +43,7 @@ const AdminPanel = () => {
   const [currentRound, setCurrentRound] = useState(1);
   const [roundBreak, setRoundBreak] = useState(false);
   const [breakTime, setBreakTime] = useState(30); // 30 seconds break between rounds
+  const [showCharts, setShowCharts] = useState(false);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -264,6 +282,26 @@ const AdminPanel = () => {
     toast.success("Pertandingan demo dibuat!");
   };
 
+  // Charts data
+  const participantsByGender = [
+    { name: 'Laki-laki', value: participants.filter(p => p.gender === 'Laki-laki').length },
+    { name: 'Perempuan', value: participants.filter(p => p.gender === 'Perempuan').length }
+  ];
+
+  const matchesByStatus = [
+    { name: 'Selesai', value: matches.filter(m => m.completed).length },
+    { name: 'Belum Selesai', value: matches.filter(m => !m.completed).length }
+  ];
+
+  const participantsByCategory = Array.from(
+    new Set(participants.map(p => p.weightCategory))
+  ).map(category => ({
+    name: category || 'Tidak ada kategori',
+    value: participants.filter(p => p.weightCategory === category).length
+  }));
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -271,6 +309,7 @@ const AdminPanel = () => {
           <TabsList className="w-full mb-6">
             <TabsTrigger value="match-control" className="flex-1">Pengaturan Pertandingan</TabsTrigger>
             <TabsTrigger value="tournament-management" className="flex-1">Manajemen Turnamen</TabsTrigger>
+            <TabsTrigger value="charts" className="flex-1">Statistik</TabsTrigger>
           </TabsList>
           
           <TabsContent value="match-control">
@@ -442,6 +481,96 @@ const AdminPanel = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="charts">
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Statistik Peserta dan Pertandingan</CardTitle>
+                  <p className="text-gray-500">
+                    Visualisasi data turnamen
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Gender Distribution Chart */}
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-medium mb-4 text-center">Distribusi Jenis Kelamin Peserta</h3>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={participantsByGender}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {participantsByGender.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => [`${value} peserta`, 'Jumlah']} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    
+                    {/* Match Status Chart */}
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-medium mb-4 text-center">Status Pertandingan</h3>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={matchesByStatus}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            >
+                              {matchesByStatus.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => [`${value} pertandingan`, 'Jumlah']} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    
+                    {/* Weight Categories Chart */}
+                    <div className="border rounded-lg p-4 md:col-span-2">
+                      <h3 className="font-medium mb-4 text-center">Peserta per Kategori Berat</h3>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={participantsByCategory}
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis />
+                            <Tooltip formatter={(value) => [`${value} peserta`, 'Jumlah']} />
+                            <Legend />
+                            <Bar dataKey="value" fill="#8884d8" name="Jumlah Peserta" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

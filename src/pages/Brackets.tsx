@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/Layout/MainLayout";
@@ -30,11 +29,11 @@ const Brackets = () => {
   
   const uniqueWeightCategories = Array.from(
     new Set(participants.map((p) => p.weightCategory))
-  );
+  ).filter(Boolean); // Filter out any empty strings
   
   const uniqueAgeCategories = Array.from(
     new Set(participants.map((p) => p.ageCategory))
-  );
+  ).filter(Boolean); // Filter out any empty strings
 
   const filteredMatches = matches.filter((match) => {
     const participant1 = participants.find((p) => p.id === match.participant1Id);
@@ -78,11 +77,13 @@ const Brackets = () => {
                     <SelectValue placeholder="Semua kategori berat" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua kategori berat</SelectItem>
+                    <SelectItem value="all">Semua kategori berat</SelectItem>
                     {uniqueWeightCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
+                      category ? (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ) : null
                     ))}
                   </SelectContent>
                 </Select>
@@ -95,7 +96,7 @@ const Brackets = () => {
                     <SelectValue placeholder="Semua jenis kelamin" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua jenis kelamin</SelectItem>
+                    <SelectItem value="all">Semua jenis kelamin</SelectItem>
                     <SelectItem value="Laki-laki">Laki-laki</SelectItem>
                     <SelectItem value="Perempuan">Perempuan</SelectItem>
                   </SelectContent>
@@ -109,11 +110,13 @@ const Brackets = () => {
                     <SelectValue placeholder="Semua kategori usia" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua kategori usia</SelectItem>
+                    <SelectItem value="all">Semua kategori usia</SelectItem>
                     {uniqueAgeCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
+                      category ? (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ) : null
                     ))}
                   </SelectContent>
                 </Select>
