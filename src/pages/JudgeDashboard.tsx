@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Pencil } from "lucide-react";
 
 const JudgeDashboard = () => {
   const { currentUser, currentJudge, logoutUser, logoutJudge, currentMatchId, participants } = useTournament();
@@ -29,6 +30,7 @@ const JudgeDashboard = () => {
   const [participant2Score, setParticipant2Score] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<any[]>([]);
+  const [editingScoreId, setEditingScoreId] = useState<string | null>(null);
   
   useEffect(() => {
     // Redirect if no user or judge is logged in
@@ -168,12 +170,20 @@ const JudgeDashboard = () => {
       // Reset form
       setParticipant1Score("");
       setParticipant2Score("");
+      setEditingScoreId(null);
     } catch (error) {
       console.error('Error submitting score:', error);
       toast.error("Terjadi kesalahan saat menyimpan nilai");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditScore = (score: any) => {
+    setCurrentRound(score.round_number);
+    setParticipant1Score(score.participant1_score.toString());
+    setParticipant2Score(score.participant2_score.toString());
+    setEditingScoreId(score.id);
   };
 
   return (
@@ -214,7 +224,12 @@ const JudgeDashboard = () => {
                   <label className="block text-sm font-medium mb-2">Pilih Pertandingan</label>
                   <Select 
                     value={selectedMatchId} 
-                    onValueChange={setSelectedMatchId}
+                    onValueChange={(value) => {
+                      setSelectedMatchId(value);
+                      setEditingScoreId(null); // Reset editing state when changing match
+                      setParticipant1Score("");
+                      setParticipant2Score("");
+                    }}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Pilih pertandingan" />
@@ -253,7 +268,27 @@ const JudgeDashboard = () => {
                     {/* Round Selection */}
                     <div>
                       <label className="block text-sm font-medium mb-2">Ronde</label>
-                      <Select value={currentRound.toString()} onValueChange={(val) => setCurrentRound(parseInt(val))}>
+                      <Select 
+                        value={currentRound.toString()} 
+                        onValueChange={(val) => {
+                          setCurrentRound(parseInt(val));
+                          setEditingScoreId(null); // Reset editing state when changing round
+                          
+                          // Pre-fill with existing score if available
+                          const existingScore = previousScores.find(
+                            score => score.round_number === parseInt(val)
+                          );
+                          
+                          if (existingScore) {
+                            setParticipant1Score(existingScore.participant1_score.toString());
+                            setParticipant2Score(existingScore.participant2_score.toString());
+                            setEditingScoreId(existingScore.id);
+                          } else {
+                            setParticipant1Score("");
+                            setParticipant2Score("");
+                          }
+                        }}
+                      >
                         <SelectTrigger className="w-full md:w-1/3">
                           <SelectValue placeholder="Pilih ronde" />
                         </SelectTrigger>
@@ -303,7 +338,12 @@ const JudgeDashboard = () => {
                       className="w-full bg-blue-600 hover:bg-blue-700"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? "Menyimpan..." : "Simpan Nilai"}
+                      {isSubmitting 
+                        ? "Menyimpan..." 
+                        : editingScoreId 
+                          ? "Perbarui Nilai" 
+                          : "Simpan Nilai"
+                      }
                     </Button>
                     
                     {/* Previous Scores */}
@@ -315,6 +355,13 @@ const JudgeDashboard = () => {
                             <div key={score.id} className="bg-gray-50 p-3 rounded-lg">
                               <div className="flex justify-between items-center mb-2">
                                 <Badge variant="outline">Ronde {score.round_number}</Badge>
+                                <Button
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditScore(score)}
+                                >
+                                  <Pencil className="h-4 w-4 mr-1" /> Edit
+                                </Button>
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
