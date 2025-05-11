@@ -29,10 +29,10 @@ const Navbar = () => {
       return (
         <div className="flex items-center gap-2">
           <Link to="/login">
-            <Button variant="outline">Masuk</Button>
+            <Button variant="outline" className="text-white border-white hover:bg-white/20">Masuk</Button>
           </Link>
           <Link to="/register">
-            <Button>Daftar</Button>
+            <Button className="bg-white text-gray-900 hover:bg-white/90">Daftar</Button>
           </Link>
         </div>
       );
@@ -47,7 +47,7 @@ const Navbar = () => {
                 Panel Admin
               </Button>
             </Link>
-            <Button onClick={handleLogout} variant="ghost" className="gap-1">
+            <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
             </Button>
@@ -60,7 +60,7 @@ const Navbar = () => {
             <Link to="/judge-dashboard">
               <Button className="bg-blue-600 hover:bg-blue-700">Panel Hakim</Button>
             </Link>
-            <Button onClick={handleLogout} variant="ghost" className="gap-1">
+            <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
             </Button>
@@ -73,7 +73,7 @@ const Navbar = () => {
             <Link to="/participant-dashboard">
               <Button className="bg-green-600 hover:bg-green-700">Dashboard Peserta</Button>
             </Link>
-            <Button onClick={handleLogout} variant="ghost" className="gap-1">
+            <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
             </Button>
@@ -82,7 +82,7 @@ const Navbar = () => {
 
       default:
         return (
-          <Button onClick={handleLogout} variant="ghost" className="gap-1">
+          <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
             <LogOut className="h-4 w-4" />
             <span>Keluar</span>
           </Button>
@@ -96,7 +96,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center py-3">
           <Link to="/" className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-red-500" />
-            <span className="font-bold text-xl">Turnamen Pencak Silat</span>
+            <span className="font-bold text-xl text-white">Turnamen Pencak Silat</span>
           </Link>
           
           <div className="hidden md:block">
@@ -104,7 +104,7 @@ const Navbar = () => {
               <NavigationMenuList>
                 <NavigationMenuItem>
                   <Link to="/">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-gray-300 hover:text-white")}>
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-white hover:text-white hover:bg-white/10")}>
                       <Home className="mr-1 h-4 w-4" />
                       Beranda
                     </NavigationMenuLink>
@@ -113,7 +113,7 @@ const Navbar = () => {
 
                 <NavigationMenuItem>
                   <Link to="/dashboard">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-gray-300 hover:text-white")}>
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-white hover:text-white hover:bg-white/10")}>
                       <Trophy className="mr-1 h-4 w-4" />
                       Dashboard
                     </NavigationMenuLink>
@@ -122,7 +122,7 @@ const Navbar = () => {
 
                 <NavigationMenuItem>
                   <Link to="/brackets">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-gray-300 hover:text-white")}>
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-white hover:text-white hover:bg-white/10")}>
                       <Calendar className="mr-1 h-4 w-4" />
                       Brackets
                     </NavigationMenuLink>
@@ -130,20 +130,20 @@ const Navbar = () => {
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-gray-300 hover:text-white">
+                  <NavigationMenuTrigger className="text-white hover:text-white hover:bg-white/10">
                     <Users className="mr-1 h-4 w-4" />
                     Informasi
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-gray-800">
                       <li>
                         <Link to="/registration">
-                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-700 focus:bg-gray-700 text-white">
                             <div className="text-sm font-medium leading-none">
                               <UserPlus className="mr-1 h-4 w-4 inline" />
                               Pendaftaran
                             </div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            <p className="line-clamp-2 text-sm leading-snug text-gray-300">
                               Daftarkan peserta baru untuk turnamen
                             </p>
                           </NavigationMenuLink>
@@ -151,12 +151,12 @@ const Navbar = () => {
                       </li>
                       <li>
                         <Link to="/organizations">
-                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-700 focus:bg-gray-700 text-white">
                             <div className="text-sm font-medium leading-none">
                               <Shield className="mr-1 h-4 w-4 inline" />
                               Organisasi
                             </div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            <p className="line-clamp-2 text-sm leading-snug text-gray-300">
                               Informasi perguruan dan cabang
                             </p>
                           </NavigationMenuLink>
@@ -165,9 +165,9 @@ const Navbar = () => {
                       {currentUser?.role === 'judge' && (
                         <li>
                           <Link to="/judge-dashboard">
-                            <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                              <div className="text-sm font-medium leading-none text-blue-400">Panel Hakim</div>
-                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-700 focus:bg-gray-700 text-white">
+                              <div className="text-sm font-medium leading-none text-blue-300">Panel Hakim</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-gray-300">
                                 Penilaian pertandingan untuk hakim
                               </p>
                             </NavigationMenuLink>
@@ -187,7 +187,7 @@ const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <Button variant="ghost">
+            <Button variant="ghost" className="text-white">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
               </svg>
