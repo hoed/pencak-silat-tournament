@@ -10,7 +10,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { Shield, Trophy, Users, Timer } from "lucide-react";
 
 const Dashboard = () => {
-  const { participants, matches, organizations } = useTournament();
+  const { participants, matches, organizations, currentUser } = useTournament();
   
   // Calculate statistics
   const completedMatches = matches.filter(match => match.completed);
@@ -35,12 +35,12 @@ const Dashboard = () => {
   // Gender distribution
   const genderData = [
     {
-      name: "Male",
-      value: participants.filter(p => p.gender === "Male").length
+      name: "Laki-laki",
+      value: participants.filter(p => p.gender === "Laki-laki").length
     },
     {
-      name: "Female",
-      value: participants.filter(p => p.gender === "Female").length
+      name: "Perempuan",
+      value: participants.filter(p => p.gender === "Perempuan").length
     }
   ];
   
@@ -65,7 +65,7 @@ const Dashboard = () => {
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Participants</p>
+                <p className="text-sm text-gray-500">Total Peserta</p>
                 <h3 className="text-2xl font-bold">{participants.length}</h3>
               </div>
             </CardContent>
@@ -77,7 +77,7 @@ const Dashboard = () => {
                 <Trophy className="h-6 w-6 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Matches</p>
+                <p className="text-sm text-gray-500">Total Pertandingan</p>
                 <h3 className="text-2xl font-bold">{matches.length}</h3>
               </div>
             </CardContent>
@@ -89,7 +89,7 @@ const Dashboard = () => {
                 <Timer className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Completed</p>
+                <p className="text-sm text-gray-500">Selesai</p>
                 <h3 className="text-2xl font-bold">{completedMatches.length}</h3>
               </div>
             </CardContent>
@@ -101,7 +101,7 @@ const Dashboard = () => {
                 <Shield className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Organizations</p>
+                <p className="text-sm text-gray-500">Organisasi</p>
                 <h3 className="text-2xl font-bold">{organizations.length}</h3>
               </div>
             </CardContent>
@@ -113,7 +113,7 @@ const Dashboard = () => {
           {/* Gender Distribution */}
           <Card>
             <CardHeader>
-              <CardTitle>Gender Distribution</CardTitle>
+              <CardTitle>Distribusi Gender</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               {participants.length > 0 ? (
@@ -141,18 +141,18 @@ const Dashboard = () => {
                   
                   <div className="grid grid-cols-2 w-full gap-3 mt-4">
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-gray-500 text-sm">Male</p>
-                      <p className="text-xl font-bold">{participants.filter(p => p.gender === "Male").length}</p>
+                      <p className="text-gray-500 text-sm">Laki-laki</p>
+                      <p className="text-xl font-bold">{participants.filter(p => p.gender === "Laki-laki").length}</p>
                     </div>
                     <div className="text-center p-3 bg-pink-50 rounded-lg">
-                      <p className="text-gray-500 text-sm">Female</p>
-                      <p className="text-xl font-bold">{participants.filter(p => p.gender === "Female").length}</p>
+                      <p className="text-gray-500 text-sm">Perempuan</p>
+                      <p className="text-xl font-bold">{participants.filter(p => p.gender === "Perempuan").length}</p>
                     </div>
                   </div>
                 </>
               ) : (
                 <div className="text-center py-10">
-                  <p className="text-gray-500">No participant data available</p>
+                  <p className="text-gray-500">Data peserta tidak tersedia</p>
                 </div>
               )}
             </CardContent>
@@ -161,7 +161,7 @@ const Dashboard = () => {
           {/* Organization Distribution */}
           <Card>
             <CardHeader>
-              <CardTitle>Organization Distribution</CardTitle>
+              <CardTitle>Distribusi Organisasi</CardTitle>
             </CardHeader>
             <CardContent>
               {participants.length > 0 ? (
@@ -185,7 +185,7 @@ const Dashboard = () => {
                 </ResponsiveContainer>
               ) : (
                 <div className="text-center py-10">
-                  <p className="text-gray-500">No organization data available</p>
+                  <p className="text-gray-500">Data organisasi tidak tersedia</p>
                 </div>
               )}
             </CardContent>
@@ -195,7 +195,7 @@ const Dashboard = () => {
         {/* Recent Matches */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Matches</CardTitle>
+            <CardTitle>Pertandingan Terbaru</CardTitle>
           </CardHeader>
           <CardContent>
             {matches.length > 0 ? (
@@ -214,7 +214,7 @@ const Dashboard = () => {
                       </div>
                       
                       {match.completed ? (
-                        <Badge className="bg-green-600">Completed</Badge>
+                        <Badge className="bg-green-600">Selesai</Badge>
                       ) : (
                         <Badge variant="outline">Pending</Badge>
                       )}
@@ -224,29 +224,14 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="text-center py-6">
-                <p className="text-gray-500">No matches created yet</p>
+                <p className="text-gray-500">Belum ada pertandingan</p>
               </div>
             )}
             
             <div className="mt-4 text-center">
               <Link to="/brackets">
-                <Button variant="outline">View All Matches</Button>
+                <Button variant="outline">Lihat Semua Pertandingan</Button>
               </Link>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Connect Supabase CTA */}
-        <Card className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
-          <CardContent className="p-6">
-            <div className="text-center py-6">
-              <h3 className="text-2xl font-bold mb-3">Connect to Supabase</h3>
-              <p className="mb-6 max-w-xl mx-auto opacity-90">
-                For full functionality including data persistence, user authentication, and realtime updates, please connect this application to Supabase.
-              </p>
-              <Button className="bg-white text-emerald-600 hover:bg-gray-100">
-                Connect to Supabase
-              </Button>
             </div>
           </CardContent>
         </Card>

@@ -1,8 +1,18 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Types
+export type UserRole = 'admin' | 'judge' | 'participant';
+
+export type User = {
+  id: string;
+  email: string;
+  role: UserRole;
+  fullName?: string;
+};
+
 export type ParticipantCategory = {
   gender: "Laki-laki" | "Perempuan";
   age: string;
@@ -57,6 +67,7 @@ export type Judge = {
 };
 
 type TournamentContextType = {
+  currentUser: User | null;
   participants: Participant[];
   addParticipant: (participant: Participant) => void;
   matches: Match[];
@@ -67,13 +78,16 @@ type TournamentContextType = {
   addOrganization: (org: { name: string; branches: { name: string; subBranches: string[] }[] }) => void;
   judges: Judge[];
   currentJudge: Judge | null;
+  loginUser: (email: string, password: string) => Promise<boolean>;
   loginJudge: (username: string, password: string) => Promise<boolean>;
+  logoutUser: () => Promise<void>;
   logoutJudge: () => void;
 };
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
 
 export const TournamentProvider = ({ children }: { children: ReactNode }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [currentMatchId, setCurrentMatchId] = useState<string | null>(null);
@@ -111,6 +125,57 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
   ]);
 
   useEffect(() => {
+    // Check for current session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { user } = session;
+        
+        // Determine user role based on email
+        let role: UserRole = 'participant';
+        if (user.email === 'admin@admin.com') {
+          role = 'admin';
+        } else if (user.email === 'juri@juri.com') {
+          role = 'judge';
+        } else if (user.email === 'peserta@peserta.com') {
+          role = 'participant';
+        }
+
+        setCurrentUser({
+          id: user.id,
+          email: user.email!,
+          role
+        });
+      }
+    };
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session && session.user) {
+          // Determine user role based on email
+          let role: UserRole = 'participant';
+          if (session.user.email === 'admin@admin.com') {
+            role = 'admin';
+          } else if (session.user.email === 'juri@juri.com') {
+            role = 'judge';
+          } else if (session.user.email === 'peserta@peserta.com') {
+            role = 'participant';
+          }
+
+          setCurrentUser({
+            id: session.user.id,
+            email: session.user.email!,
+            role
+          });
+        } else {
+          setCurrentUser(null);
+        }
+      }
+    );
+
+    checkSession();
+    
     // Fetch participants from Supabase
     const fetchParticipants = async () => {
       const { data, error } = await supabase.from('participants').select('*');
@@ -123,7 +188,7 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
         const formattedData: Participant[] = data.map(p => ({
           id: p.id,
           fullName: p.full_name,
-          gender: p.gender === 'Male' ? 'Laki-laki' : 'Perempuan',
+          gender: p.gender,
           dateOfBirth: p.date_of_birth,
           ageCategory: p.age_category,
           weightCategory: p.weight_category,
@@ -155,9 +220,91 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
+    // Fetch matches
+    const fetchMatches = async () => {
+      const { data, error } = await supabase.from('matches').select('*');
+      if (error) {
+        console.error('Error fetching matches:', error);
+        return;
+      }
+      
+      if (data) {
+        const formattedMatches: Match[] = data.map(m => ({
+          id: m.id,
+          participant1Id: m.participant1_id,
+          participant2Id: m.participant2_id,
+          rounds: [],
+          winnerId: m.winner_id,
+          matchNumber: m.match_number,
+          roundNumber: m.round_number,
+          completed: m.completed || false,
+        }));
+        setMatches(formattedMatches);
+      }
+    };
+
     fetchParticipants();
     fetchJudges();
+    fetchMatches();
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
+
+  const loginUser = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        toast.error('Gagal login: ' + error.message);
+        return false;
+      }
+
+      if (data.user) {
+        // Determine user role based on email
+        let role: UserRole = 'participant';
+        if (email === 'admin@admin.com') {
+          role = 'admin';
+        } else if (email === 'juri@juri.com') {
+          role = 'judge';
+        } else if (email === 'peserta@peserta.com') {
+          role = 'participant';
+        }
+
+        setCurrentUser({
+          id: data.user.id,
+          email: data.user.email!,
+          role
+        });
+        
+        toast.success('Login berhasil');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Unexpected error during login:', error);
+      toast.error('Terjadi kesalahan saat login');
+      return false;
+    }
+  };
+
+  const logoutUser = async (): Promise<void> => {
+    try {
+      await supabase.auth.signOut();
+      setCurrentUser(null);
+      setCurrentJudge(null);
+      toast.success('Berhasil keluar');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Gagal logout');
+    }
+  };
 
   const addParticipant = async (participant: Participant) => {
     // Add to local state
@@ -167,7 +314,7 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.from('participants').insert({
       id: participant.id,
       full_name: participant.fullName,
-      gender: participant.gender === 'Laki-laki' ? 'Male' : 'Female',
+      gender: participant.gender,
       date_of_birth: participant.dateOfBirth,
       age_category: participant.ageCategory,
       weight_category: participant.weightCategory,
@@ -237,6 +384,7 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
   return (
     <TournamentContext.Provider 
       value={{ 
+        currentUser,
         participants, 
         addParticipant, 
         matches, 
@@ -247,7 +395,9 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
         addOrganization,
         judges,
         currentJudge,
+        loginUser,
         loginJudge,
+        logoutUser,
         logoutJudge
       }}
     >

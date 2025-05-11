@@ -1,61 +1,188 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, Trophy, UserPlus, Users, Shield, Home } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, Trophy, UserPlus, Users, Shield, Home, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTournament } from '@/contexts/TournamentContext';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { cn } from '@/lib/utils';
 
 const Navbar = () => {
+  const { currentUser, logoutUser } = useTournament();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logoutUser();
+    navigate('/');
+  };
+
+  const renderUserLinks = () => {
+    if (!currentUser) {
+      return (
+        <div className="flex items-center gap-2">
+          <Link to="/login">
+            <Button variant="outline">Masuk</Button>
+          </Link>
+          <Link to="/register">
+            <Button>Daftar</Button>
+          </Link>
+        </div>
+      );
+    }
+
+    switch (currentUser.role) {
+      case 'admin':
+        return (
+          <div className="flex items-center gap-2">
+            <Link to="/admin-panel">
+              <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
+                Panel Admin
+              </Button>
+            </Link>
+            <Button onClick={handleLogout} variant="ghost" className="gap-1">
+              <LogOut className="h-4 w-4" />
+              <span>Keluar</span>
+            </Button>
+          </div>
+        );
+
+      case 'judge':
+        return (
+          <div className="flex items-center gap-2">
+            <Link to="/judge-dashboard">
+              <Button className="bg-blue-600 hover:bg-blue-700">Panel Hakim</Button>
+            </Link>
+            <Button onClick={handleLogout} variant="ghost" className="gap-1">
+              <LogOut className="h-4 w-4" />
+              <span>Keluar</span>
+            </Button>
+          </div>
+        );
+
+      case 'participant':
+        return (
+          <div className="flex items-center gap-2">
+            <Link to="/participant-dashboard">
+              <Button className="bg-green-600 hover:bg-green-700">Dashboard Peserta</Button>
+            </Link>
+            <Button onClick={handleLogout} variant="ghost" className="gap-1">
+              <LogOut className="h-4 w-4" />
+              <span>Keluar</span>
+            </Button>
+          </div>
+        );
+
+      default:
+        return (
+          <Button onClick={handleLogout} variant="ghost" className="gap-1">
+            <LogOut className="h-4 w-4" />
+            <span>Keluar</span>
+          </Button>
+        );
+    }
+  };
+
   return (
-    <nav className="bg-gray-900 text-white shadow-lg">
+    <nav className="bg-gray-900 text-white shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-3">
           <Link to="/" className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-red-500" />
-            <span className="font-bold text-xl">Pencak Silat Tournament</span>
+            <span className="font-bold text-xl">Turnamen Pencak Silat</span>
           </Link>
           
-          <div className="hidden md:flex space-x-1">
-            <Link to="/">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
-                <Home className="mr-1 h-4 w-4" />
-                Home
-              </Button>
-            </Link>
-            <Link to="/dashboard">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
-                <Trophy className="mr-1 h-4 w-4" />
-                Dashboard
-              </Button>
-            </Link>
-            <Link to="/brackets">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
-                <Calendar className="mr-1 h-4 w-4" />
-                Brackets
-              </Button>
-            </Link>
-            <Link to="/registration">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
-                <UserPlus className="mr-1 h-4 w-4" />
-                Registration
-              </Button>
-            </Link>
-            <Link to="/organizations">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
-                <Users className="mr-1 h-4 w-4" />
-                Organizations
-              </Button>
-            </Link>
+          <div className="hidden md:block">
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <Link to="/">
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-gray-300 hover:text-white")}>
+                      <Home className="mr-1 h-4 w-4" />
+                      Beranda
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <Link to="/dashboard">
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-gray-300 hover:text-white")}>
+                      <Trophy className="mr-1 h-4 w-4" />
+                      Dashboard
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <Link to="/brackets">
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-gray-300 hover:text-white")}>
+                      <Calendar className="mr-1 h-4 w-4" />
+                      Brackets
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="text-gray-300 hover:text-white">
+                    <Users className="mr-1 h-4 w-4" />
+                    Informasi
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                      <li>
+                        <Link to="/registration">
+                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">
+                              <UserPlus className="mr-1 h-4 w-4 inline" />
+                              Pendaftaran
+                            </div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Daftarkan peserta baru untuk turnamen
+                            </p>
+                          </NavigationMenuLink>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link to="/organizations">
+                          <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                            <div className="text-sm font-medium leading-none">
+                              <Shield className="mr-1 h-4 w-4 inline" />
+                              Organisasi
+                            </div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Informasi perguruan dan cabang
+                            </p>
+                          </NavigationMenuLink>
+                        </Link>
+                      </li>
+                      {currentUser?.role === 'judge' && (
+                        <li>
+                          <Link to="/judge-dashboard">
+                            <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none text-blue-400">Panel Hakim</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Penilaian pertandingan untuk hakim
+                              </p>
+                            </NavigationMenuLink>
+                          </Link>
+                        </li>
+                      )}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
 
-          <div className="hidden md:block">
-            <Link to="/admin-panel">
-              <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
-                Admin Panel
-              </Button>
-            </Link>
-            <Link to="/judge-panel" className="ml-2">
-              <Button className="bg-blue-600 hover:bg-blue-700">Judge Panel</Button>
-            </Link>
+          <div className="hidden md:flex gap-2">
+            {renderUserLinks()}
           </div>
 
           {/* Mobile menu button */}

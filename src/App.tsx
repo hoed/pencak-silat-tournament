@@ -15,6 +15,8 @@ import Organizations from "./pages/Organizations";
 import JudgeLogin from "./pages/JudgeLogin";
 import JudgeDashboard from "./pages/JudgeDashboard";
 import { TournamentProvider } from "./contexts/TournamentContext";
+import Login from "./pages/Login";
+import ParticipantDashboard from "./pages/ParticipantDashboard";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/organizations" element={<Organizations />} />
             <Route path="/judge-login" element={<JudgeLogin />} />
             <Route path="/judge-dashboard" element={<JudgeDashboard />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/participant-dashboard" element={<ParticipantDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

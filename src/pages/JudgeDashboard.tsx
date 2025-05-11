@@ -20,7 +20,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const JudgeDashboard = () => {
-  const { currentJudge, logoutJudge, currentMatchId, participants } = useTournament();
+  const { currentUser, currentJudge, logoutUser, logoutJudge, currentMatchId, participants } = useTournament();
   const navigate = useNavigate();
   const [matches, setMatches] = useState<any[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState<string>("");
@@ -31,9 +31,9 @@ const JudgeDashboard = () => {
   const [previousScores, setPreviousScores] = useState<any[]>([]);
   
   useEffect(() => {
-    // Redirect if no judge is logged in
-    if (!currentJudge) {
-      navigate("/judge-login");
+    // Redirect if no user or judge is logged in
+    if (!currentUser && !currentJudge) {
+      navigate("/login");
       return;
     }
     
@@ -54,7 +54,7 @@ const JudgeDashboard = () => {
     };
     
     fetchMatches();
-  }, [currentJudge, currentMatchId, navigate]);
+  }, [currentUser, currentJudge, currentMatchId, navigate]);
   
   useEffect(() => {
     // Fetch previous scores for this judge and match
@@ -90,9 +90,13 @@ const JudgeDashboard = () => {
     ? participants.find(p => p.id === selectedMatch.participant2_id)
     : null;
   
-  const handleLogout = () => {
-    logoutJudge();
-    navigate("/judge-login");
+  const handleLogout = async () => {
+    if (currentUser) {
+      await logoutUser();
+    } else {
+      logoutJudge();
+    }
+    navigate("/login");
   };
 
   const submitScore = async () => {
@@ -182,6 +186,11 @@ const JudgeDashboard = () => {
               {currentJudge && (
                 <p className="text-gray-500">
                   Selamat datang, {currentJudge.fullName} (Hakim #{currentJudge.judgeNumber})
+                </p>
+              )}
+              {currentUser && currentUser.role === 'judge' && (
+                <p className="text-gray-500">
+                  Selamat datang, Hakim ({currentUser.email})
                 </p>
               )}
             </div>
