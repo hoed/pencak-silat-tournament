@@ -10,7 +10,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { cn } from '@/lib/utils';
 
@@ -100,34 +99,28 @@ const Navbar = () => {
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <Link to="/">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-white hover:text-white hover:bg-white/10")}>
-                      <Home className="mr-1 h-4 w-4" />
-                      Beranda
-                    </NavigationMenuLink>
+                  <Link to="/" className="text-white hover:text-red-300 px-3 py-2 flex items-center">
+                    <Home className="mr-1 h-4 w-4" />
+                    Beranda
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link to="/dashboard">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-white hover:text-white hover:bg-white/10")}>
-                      <Trophy className="mr-1 h-4 w-4" />
-                      Dashboard
-                    </NavigationMenuLink>
+                  <Link to="/dashboard" className="text-white hover:text-red-300 px-3 py-2 flex items-center">
+                    <Trophy className="mr-1 h-4 w-4" />
+                    Dashboard
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <Link to="/brackets">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-white hover:text-white hover:bg-white/10")}>
-                      <Calendar className="mr-1 h-4 w-4" />
-                      Brackets
-                    </NavigationMenuLink>
+                  <Link to="/brackets" className="text-white hover:text-red-300 px-3 py-2 flex items-center">
+                    <Calendar className="mr-1 h-4 w-4" />
+                    Brackets
                   </Link>
                 </NavigationMenuItem>
 
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-white hover:text-white hover:bg-white/10">
+                  <NavigationMenuTrigger className="text-white bg-transparent hover:bg-white/10">
                     <Users className="mr-1 h-4 w-4" />
                     Informasi
                   </NavigationMenuTrigger>

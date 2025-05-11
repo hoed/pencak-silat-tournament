@@ -1,4 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from 'uuid';
 
 export const insertSampleData = async () => {
   try {
@@ -15,10 +17,24 @@ export const insertSampleData = async () => {
       };
     }
 
+    // Generate valid UUIDs
+    const participant1Id = uuidv4();
+    const participant2Id = uuidv4();
+    const participant3Id = uuidv4();
+    const participant4Id = uuidv4();
+    
+    const judge1Id = uuidv4();
+    const judge2Id = uuidv4();
+    const judge3Id = uuidv4();
+    
+    const match1Id = uuidv4();
+    const match2Id = uuidv4();
+    const match3Id = uuidv4();
+
     // Sample participants data
     const participants = [
       {
-        id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+        id: participant1Id,
         full_name: 'John Doe',
         gender: 'Laki-laki',
         date_of_birth: '1990-01-01',
@@ -30,7 +46,7 @@ export const insertSampleData = async () => {
         region: 'DKI Jakarta',
       },
       {
-        id: 'b2c3d4e5-f6a7-8901-2345-67890abcdef12',
+        id: participant2Id,
         full_name: 'Jane Smith',
         gender: 'Perempuan',
         date_of_birth: '1992-02-02',
@@ -42,7 +58,7 @@ export const insertSampleData = async () => {
         region: 'Jawa Timur',
       },
       {
-        id: 'c3d4e5f6-a7b8-9012-3456-7890abcdef123',
+        id: participant3Id,
         full_name: 'Alice Johnson',
         gender: 'Perempuan',
         date_of_birth: '1995-03-03',
@@ -54,7 +70,7 @@ export const insertSampleData = async () => {
         region: 'Jawa Barat',
       },
       {
-        id: 'd4e5f6a7-b8c9-0123-4567-890abcdef1234',
+        id: participant4Id,
         full_name: 'Bob Williams',
         gender: 'Laki-laki',
         date_of_birth: '1998-04-04',
@@ -79,9 +95,9 @@ export const insertSampleData = async () => {
 
     // Sample judges data
     const judges = [
-      { id: 'j1a2b3c4-d5e6-7890-1234-567890abcdef', full_name: 'Hakim Satu', judge_number: 1, username: 'hakim1', password: 'password1' },
-      { id: 'j2b3c4d5-e6f7-8901-2345-67890abcdef12', full_name: 'Hakim Dua', judge_number: 2, username: 'hakim2', password: 'password2' },
-      { id: 'j3c4d5e6-f7a8-9012-3456-7890abcdef123', full_name: 'Hakim Tiga', judge_number: 3, username: 'hakim3', password: 'password3' },
+      { id: judge1Id, full_name: 'Hakim Satu', judge_number: 1, username: 'hakim1', password: 'password1' },
+      { id: judge2Id, full_name: 'Hakim Dua', judge_number: 2, username: 'hakim2', password: 'password2' },
+      { id: judge3Id, full_name: 'Hakim Tiga', judge_number: 3, username: 'hakim3', password: 'password3' },
     ];
 
     // Insert judges
@@ -96,9 +112,9 @@ export const insertSampleData = async () => {
 
     // Sample matches data
     const matches = [
-      { id: 'm1n2o3p4-q5r6-7890-1234-567890abcdef', match_number: 1, participant1_id: participants[0].id, participant2_id: participants[1].id, round_number: 1, completed: false },
-      { id: 'm2o3p4q5-r6s7-8901-2345-67890abcdef12', match_number: 2, participant1_id: participants[2].id, participant2_id: participants[3].id, round_number: 1, completed: false },
-      { id: 'm3p4q5r6-s7t8-9012-3456-7890abcdef123', match_number: 3, participant1_id: participants[0].id, participant2_id: participants[3].id, round_number: 2, completed: false },
+      { id: match1Id, match_number: 1, participant1_id: participant1Id, participant2_id: participant2Id, round_number: 1, completed: false },
+      { id: match2Id, match_number: 2, participant1_id: participant3Id, participant2_id: participant4Id, round_number: 1, completed: false },
+      { id: match3Id, match_number: 3, participant1_id: participant1Id, participant2_id: participant4Id, round_number: 2, completed: false },
     ];
 
     // Insert matches
@@ -178,7 +194,7 @@ export const clearAllData = async () => {
     const { error: scoresError } = await supabase
       .from('round_scores')
       .delete()
-      .neq('id', null); // Delete all rows
+      .not('id', 'is', null); // Delete all rows
 
     if (scoresError) {
       console.error('Error deleting round scores:', scoresError);
@@ -189,7 +205,7 @@ export const clearAllData = async () => {
     const { error: matchesError } = await supabase
       .from('matches')
       .delete()
-      .neq('id', null); // Delete all rows
+      .not('id', 'is', null); // Delete all rows
 
     if (matchesError) {
       console.error('Error deleting matches:', matchesError);
@@ -200,7 +216,7 @@ export const clearAllData = async () => {
     const { error: judgesError } = await supabase
       .from('judges')
       .delete()
-      .neq('id', null); // Delete all rows
+      .not('id', 'is', null); // Delete all rows
 
     if (judgesError) {
       console.error('Error deleting judges:', judgesError);
@@ -211,7 +227,7 @@ export const clearAllData = async () => {
     const { error: participantsError } = await supabase
       .from('participants')
       .delete()
-      .neq('id', null); // Delete all rows
+      .not('id', 'is', null); // Delete all rows
 
     if (participantsError) {
       console.error('Error deleting participants:', participantsError);

@@ -29,7 +29,13 @@ const App = () => {
     const loadSampleData = async () => {
       try {
         // First clear all existing data
-        await clearAllData();
+        const clearResult = await clearAllData();
+        
+        if (!clearResult.success) {
+          console.error("Error clearing data:", clearResult.message);
+          toast.error("Gagal menghapus data lama: " + clearResult.message);
+          return;
+        }
         
         // Then insert fresh sample data
         const result = await insertSampleData();
