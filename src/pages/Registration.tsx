@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { useTournament } from "@/contexts/TournamentContext";
 import MainLayout from "@/components/Layout/MainLayout";
 import {
@@ -136,23 +137,52 @@ const Registration = () => {
       ? weightCategoriesFemale 
       : [];
 
-  function onSubmit(values: FormValues) {
-    const newParticipant = {
-      id: uuidv4(),
-      fullName: values.fullName,
-      gender: values.gender,
-      dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
-      ageCategory: values.ageCategory,
-      weightCategory: values.weightCategory,
-      organization: values.organization,
-      branch: values.branch,
-      subBranch: values.subBranch,
-      region: values.region,
-    };
+  async function onSubmit(values: FormValues) {
+    const participantId = uuidv4();
     
-    addParticipant(newParticipant);
-    toast.success("Peserta berhasil terdaftar!");
-    form.reset();
+    try {
+      // First, insert directly into Supabase
+      const { error: supabaseError } = await supabase.from('participants').insert({
+        id: participantId,
+        full_name: values.fullName,
+        gender: values.gender,
+        date_of_birth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+        age_category: values.ageCategory,
+        weight_category: values.weightCategory,
+        organization: values.organization,
+        branch: values.branch,
+        sub_branch: values.subBranch,
+        region: values.region
+      });
+      
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        toast.error(`Gagal mendaftarkan peserta: ${supabaseError.message}`);
+        return;
+      }
+      
+      // If Supabase insert is successful, update the local state
+      const newParticipant = {
+        id: participantId,
+        fullName: values.fullName,
+        gender: values.gender,
+        dateOfBirth: format(values.dateOfBirth, 'yyyy-MM-dd'),
+        ageCategory: values.ageCategory,
+        weightCategory: values.weightCategory,
+        organization: values.organization,
+        branch: values.branch,
+        subBranch: values.subBranch,
+        region: values.region,
+      };
+      
+      // Update context state
+      addParticipant(newParticipant);
+      toast.success("Peserta berhasil terdaftar!");
+      form.reset();
+    } catch (error) {
+      console.error('Error registering participant:', error);
+      toast.error('Terjadi kesalahan saat mendaftarkan peserta');
+    }
   }
 
   return (
