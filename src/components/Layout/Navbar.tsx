@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar, Trophy, UserPlus, Users, Shield, Home, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useTournament } from '@/contexts/TournamentContext';
 import {
   NavigationMenu,
@@ -27,12 +26,12 @@ const Navbar = () => {
   const renderUserLinks = () => {
     if (!currentUser) {
       return (
-        <div className="flex items-center gap-2">
-          <Link to="/login">
-            <Button variant="outline" className="text-white border-white hover:bg-white/20">Masuk</Button>
+        <div className="flex items-center gap-4">
+          <Link to="/login" className="text-white hover:text-red-300 transition-colors">
+            Masuk
           </Link>
-          <Link to="/register">
-            <Button className="bg-white text-gray-900 hover:bg-white/90">Daftar</Button>
+          <Link to="/register" className="text-white hover:text-red-300 transition-colors">
+            Daftar
           </Link>
         </div>
       );
@@ -41,51 +40,49 @@ const Navbar = () => {
     switch (currentUser.role) {
       case 'admin':
         return (
-          <div className="flex items-center gap-2">
-            <Link to="/admin-panel">
-              <Button variant="outline" className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
-                Panel Admin
-              </Button>
+          <div className="flex items-center gap-4">
+            <Link to="/admin-panel" className="text-red-400 hover:text-red-300 transition-colors font-medium">
+              Panel Admin
             </Link>
-            <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
+            <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
-            </Button>
+            </button>
           </div>
         );
 
       case 'judge':
         return (
-          <div className="flex items-center gap-2">
-            <Link to="/judge-dashboard">
-              <Button className="bg-blue-600 hover:bg-blue-700">Panel Hakim</Button>
+          <div className="flex items-center gap-4">
+            <Link to="/judge-dashboard" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+              Panel Hakim
             </Link>
-            <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
+            <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
-            </Button>
+            </button>
           </div>
         );
 
       case 'participant':
         return (
-          <div className="flex items-center gap-2">
-            <Link to="/participant-dashboard">
-              <Button className="bg-green-600 hover:bg-green-700">Dashboard Peserta</Button>
+          <div className="flex items-center gap-4">
+            <Link to="/participant-dashboard" className="text-green-400 hover:text-green-300 transition-colors font-medium">
+              Dashboard Peserta
             </Link>
-            <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
+            <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
               <LogOut className="h-4 w-4" />
               <span>Keluar</span>
-            </Button>
+            </button>
           </div>
         );
 
       default:
         return (
-          <Button onClick={handleLogout} variant="ghost" className="gap-1 text-white hover:bg-white/20">
+          <button onClick={handleLogout} className="text-white hover:text-red-300 transition-colors flex items-center gap-1">
             <LogOut className="h-4 w-4" />
             <span>Keluar</span>
-          </Button>
+          </button>
         );
     }
   };
@@ -187,11 +184,11 @@ const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <Button variant="ghost" className="text-white">
+            <button className="text-white">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
               </svg>
-            </Button>
+            </button>
           </div>
         </div>
       </div>

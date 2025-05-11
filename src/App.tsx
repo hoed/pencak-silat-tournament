@@ -18,7 +18,8 @@ import { TournamentProvider } from "./contexts/TournamentContext";
 import Login from "./pages/Login";
 import ParticipantDashboard from "./pages/ParticipantDashboard";
 import { useEffect } from "react";
-import { insertSampleData } from "./services/SampleDataService";
+import { insertSampleData, clearAllData } from "./services/SampleDataService";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient();
 
@@ -27,10 +28,21 @@ const App = () => {
   useEffect(() => {
     const loadSampleData = async () => {
       try {
+        // First clear all existing data
+        await clearAllData();
+        
+        // Then insert fresh sample data
         const result = await insertSampleData();
         console.log("Sample data initialization result:", result);
+        
+        if (result.success) {
+          toast.success("Data sampel berhasil dimuat");
+        } else {
+          toast.error("Gagal memuat data sampel: " + result.message);
+        }
       } catch (error) {
         console.error("Error initializing sample data:", error);
+        toast.error("Terjadi kesalahan saat memuat data sampel");
       }
     };
     
