@@ -83,10 +83,3 @@ VITE_SUPABASE_ANON_KEY=your-key
 Proyek ini bersifat open-source dengan lisensi MIT.
 
 Dibuat dengan ❤️ untuk mendukung digitalisasi olahraga bela diri tradisional Indonesia.
-
-```
-
----
-
-Jika kamu ingin, aku juga bisa bantu buatkan isi `.env.example`, struktur tabel Supabase SQL, atau file seeder-nya. Mau dilanjut ke bagian mana dulu?
-```
