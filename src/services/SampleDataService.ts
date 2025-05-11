@@ -1,331 +1,226 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
-
-// Sample participants data
-const sampleParticipants = [
-  {
-    id: uuidv4(),
-    full_name: "Ahmad Sutoyo",
-    gender: "Laki-laki",
-    date_of_birth: "1998-05-12",
-    weight_category: "60-65kg",
-    age_category: "Dewasa",
-    organization: "Perguruan Silat Nusantara",
-    branch: "Jakarta Selatan",
-    sub_branch: "Kebayoran Baru",
-    region: "DKI Jakarta"
-  },
-  {
-    id: uuidv4(),
-    full_name: "Budi Santoso",
-    gender: "Laki-laki",
-    date_of_birth: "1999-08-24",
-    weight_category: "65-70kg",
-    age_category: "Dewasa",
-    organization: "Persatuan Pencak Silat Indonesia",
-    branch: "Jakarta Timur",
-    sub_branch: "Cakung",
-    region: "DKI Jakarta"
-  },
-  {
-    id: uuidv4(),
-    full_name: "Citra Dewi",
-    gender: "Perempuan",
-    date_of_birth: "2000-03-18",
-    weight_category: "50-55kg",
-    age_category: "Remaja",
-    organization: "Pencak Silat Merpati Putih",
-    branch: "Bandung",
-    sub_branch: "Ujung Berung",
-    region: "Jawa Barat"
-  },
-  {
-    id: uuidv4(),
-    full_name: "Dewi Putri",
-    gender: "Perempuan",
-    date_of_birth: "2001-11-29",
-    weight_category: "55-60kg",
-    age_category: "Remaja",
-    organization: "Perguruan Silat Nusantara",
-    branch: "Surabaya",
-    sub_branch: "Rungkut",
-    region: "Jawa Timur"
-  },
-  {
-    id: uuidv4(),
-    full_name: "Eko Prasetyo",
-    gender: "Laki-laki",
-    date_of_birth: "1997-04-15",
-    weight_category: "70-75kg",
-    age_category: "Dewasa",
-    organization: "Perguruan Silat Satria",
-    branch: "Yogyakarta",
-    sub_branch: "Malioboro",
-    region: "DIY Yogyakarta"
-  },
-  {
-    id: uuidv4(),
-    full_name: "Fitri Handayani",
-    gender: "Perempuan",
-    date_of_birth: "1999-12-03",
-    weight_category: "55-60kg",
-    age_category: "Dewasa",
-    organization: "Persatuan Pencak Silat Indonesia",
-    branch: "Semarang",
-    sub_branch: "Simpang Lima",
-    region: "Jawa Tengah"
-  },
-  {
-    id: uuidv4(),
-    full_name: "Galih Prakoso",
-    gender: "Laki-laki",
-    date_of_birth: "2002-06-22",
-    weight_category: "60-65kg",
-    age_category: "Remaja",
-    organization: "Pencak Silat Merpati Putih",
-    branch: "Surakarta",
-    sub_branch: "Pasar Kliwon",
-    region: "Jawa Tengah"
-  },
-  {
-    id: uuidv4(),
-    full_name: "Hana Permata",
-    gender: "Perempuan",
-    date_of_birth: "2001-01-17",
-    weight_category: "50-55kg",
-    age_category: "Remaja",
-    organization: "Perguruan Silat Satria",
-    branch: "Malang",
-    sub_branch: "Klojen",
-    region: "Jawa Timur"
-  }
-];
-
-// Sample judges data
-const sampleJudges = [
-  {
-    id: uuidv4(),
-    username: "hakim1",
-    password: "password123",
-    full_name: "Joko Widodo",
-    judge_number: 1
-  },
-  {
-    id: uuidv4(),
-    username: "hakim2",
-    password: "password123",
-    full_name: "Susilo Bambang",
-    judge_number: 2
-  },
-  {
-    id: uuidv4(),
-    username: "hakim3",
-    password: "password123",
-    full_name: "Megawati",
-    judge_number: 3
-  }
-];
 
 export const insertSampleData = async () => {
   try {
-    // Insert participants
-    const { data: participantsData, error: participantsError } = await supabase
+    // Check if data already exists
+    const { data: existingParticipants } = await supabase
       .from('participants')
-      .upsert(sampleParticipants)
-      .select();
+      .select('id')
+      .limit(1);
 
-    if (participantsError) {
-      throw participantsError;
-    }
-
-    // Insert judges
-    const { data: judgesData, error: judgesError } = await supabase
-      .from('judges')
-      .upsert(sampleJudges)
-      .select();
-
-    if (judgesError) {
-      throw judgesError;
-    }
-
-    // Create matches between participants
-    const matches = [];
-    if (participantsData && participantsData.length >= 8) {
-      // Male matches - Quarterfinals
-      matches.push({
-        id: uuidv4(),
-        participant1_id: participantsData[0].id,
-        participant2_id: participantsData[1].id,
-        match_number: 1,
-        round_number: 1,
-        completed: false
-      });
-
-      matches.push({
-        id: uuidv4(),
-        participant1_id: participantsData[4].id,
-        participant2_id: participantsData[6].id,
-        match_number: 2,
-        round_number: 1,
-        completed: false
-      });
-
-      // Female matches - Quarterfinals
-      matches.push({
-        id: uuidv4(),
-        participant1_id: participantsData[2].id,
-        participant2_id: participantsData[3].id,
-        match_number: 3,
-        round_number: 1,
-        completed: false
-      });
-
-      matches.push({
-        id: uuidv4(),
-        participant1_id: participantsData[5].id,
-        participant2_id: participantsData[7].id,
-        match_number: 4,
-        round_number: 1,
-        completed: false
-      });
-
-      // Semi-final matches
-      matches.push({
-        id: uuidv4(),
-        participant1_id: null, // Will be filled with winners
-        participant2_id: null, // Will be filled with winners
-        match_number: 5,
-        round_number: 2,
-        completed: false
-      });
-
-      matches.push({
-        id: uuidv4(),
-        participant1_id: null, // Will be filled with winners
-        participant2_id: null, // Will be filled with winners
-        match_number: 6,
-        round_number: 2,
-        completed: false
-      });
-
-      // Final match
-      matches.push({
-        id: uuidv4(),
-        participant1_id: null, // Will be filled with winners
-        participant2_id: null, // Will be filled with winners
-        match_number: 7,
-        round_number: 3,
-        completed: false
-      });
-
-      // Insert matches
-      const { data: matchesData, error: matchesError } = await supabase
-        .from('matches')
-        .upsert(matches)
-        .select();
-
-      if (matchesError) {
-        throw matchesError;
-      }
-
-      // Create sample scores for the first 4 matches
-      const sampleScores = [];
-      if (judgesData && judgesData.length >= 3 && matchesData && matchesData.length >= 4) {
-        // Add scores for match 1, round 1 from all 3 judges
-        for (let j = 0; j < 3; j++) {
-          sampleScores.push({
-            id: uuidv4(),
-            match_id: matchesData[0].id,
-            judge_id: judgesData[j].id,
-            round_number: 1,
-            participant1_score: 7 + Math.random() * 2, // Between 7-9
-            participant2_score: 6 + Math.random() * 3  // Between 6-9
-          });
-        }
-
-        // Add scores for match 1, round 2 from all 3 judges
-        for (let j = 0; j < 3; j++) {
-          sampleScores.push({
-            id: uuidv4(),
-            match_id: matchesData[0].id,
-            judge_id: judgesData[j].id,
-            round_number: 2,
-            participant1_score: 7 + Math.random() * 2,
-            participant2_score: 6 + Math.random() * 3
-          });
-        }
-
-        // Add scores for match 2, round 1 from all 3 judges
-        for (let j = 0; j < 3; j++) {
-          sampleScores.push({
-            id: uuidv4(),
-            match_id: matchesData[1].id,
-            judge_id: judgesData[j].id,
-            round_number: 1,
-            participant1_score: 6 + Math.random() * 3,
-            participant2_score: 7 + Math.random() * 2
-          });
-        }
-
-        // Insert scores
-        const { error: scoresError } = await supabase
-          .from('round_scores')
-          .upsert(sampleScores);
-
-        if (scoresError) {
-          throw scoresError;
-        }
-      }
-
+    if (existingParticipants && existingParticipants.length > 0) {
       return {
-        success: true,
-        message: "Data sampel berhasil dimasukkan",
-        data: {
-          participants: participantsData,
-          judges: judgesData,
-          matches: matchesData,
-          scores: sampleScores.length
-        }
+        success: false,
+        message: 'Data sudah ada. Hapus data terlebih dahulu sebelum memasukkan data sampel baru.',
       };
     }
 
-    return {
-      success: true,
-      message: "Data sampel berhasil dimasukkan",
-      data: {
-        participants: participantsData,
-        judges: judgesData
+    // Sample participants data
+    const participants = [
+      {
+        id: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
+        full_name: 'John Doe',
+        gender: 'Laki-laki',
+        date_of_birth: '1990-01-01',
+        age_category: 'Dewasa',
+        weight_category: '70-80kg',
+        organization: 'Federasi Pencak Silat',
+        branch: 'Cabang Utara',
+        sub_branch: 'Divisi Kota A',
+        region: 'DKI Jakarta',
+      },
+      {
+        id: 'b2c3d4e5-f6a7-8901-2345-67890abcdef12',
+        full_name: 'Jane Smith',
+        gender: 'Perempuan',
+        date_of_birth: '1992-02-02',
+        age_category: 'Dewasa',
+        weight_category: '60-70kg',
+        organization: 'Asosiasi Silat Nasional',
+        branch: 'Cabang Timur',
+        sub_branch: 'Distrik 1',
+        region: 'Jawa Timur',
+      },
+      {
+        id: 'c3d4e5f6-a7b8-9012-3456-7890abcdef123',
+        full_name: 'Alice Johnson',
+        gender: 'Perempuan',
+        date_of_birth: '1995-03-03',
+        age_category: 'Remaja',
+        weight_category: '50-60kg',
+        organization: 'Federasi Pencak Silat',
+        branch: 'Cabang Selatan',
+        sub_branch: 'Divisi Kota C',
+        region: 'Jawa Barat',
+      },
+      {
+        id: 'd4e5f6a7-b8c9-0123-4567-890abcdef1234',
+        full_name: 'Bob Williams',
+        gender: 'Laki-laki',
+        date_of_birth: '1998-04-04',
+        age_category: 'Remaja',
+        weight_category: '60-70kg',
+        organization: 'Asosiasi Silat Nasional',
+        branch: 'Cabang Barat',
+        sub_branch: 'Distrik 3',
+        region: 'Jawa Tengah',
+      },
+    ];
+
+    // Insert participants
+    const { error: participantsError } = await supabase
+      .from('participants')
+      .insert(participants);
+
+    if (participantsError) {
+      console.error('Error inserting participants:', participantsError);
+      return { success: false, message: 'Gagal menambahkan data peserta: ' + participantsError.message };
+    }
+
+    // Sample judges data
+    const judges = [
+      { id: 'j1a2b3c4-d5e6-7890-1234-567890abcdef', full_name: 'Hakim Satu', judge_number: 1, username: 'hakim1', password: 'password1' },
+      { id: 'j2b3c4d5-e6f7-8901-2345-67890abcdef12', full_name: 'Hakim Dua', judge_number: 2, username: 'hakim2', password: 'password2' },
+      { id: 'j3c4d5e6-f7a8-9012-3456-7890abcdef123', full_name: 'Hakim Tiga', judge_number: 3, username: 'hakim3', password: 'password3' },
+    ];
+
+    // Insert judges
+    const { error: judgesError } = await supabase
+      .from('judges')
+      .insert(judges);
+
+    if (judgesError) {
+      console.error('Error inserting judges:', judgesError);
+      return { success: false, message: 'Gagal menambahkan data hakim: ' + judgesError.message };
+    }
+
+    // Sample matches data
+    const matches = [
+      { id: 'm1n2o3p4-q5r6-7890-1234-567890abcdef', match_number: 1, participant1_id: participants[0].id, participant2_id: participants[1].id, round_number: 1, completed: false },
+      { id: 'm2o3p4q5-r6s7-8901-2345-67890abcdef12', match_number: 2, participant1_id: participants[2].id, participant2_id: participants[3].id, round_number: 1, completed: false },
+      { id: 'm3p4q5r6-s7t8-9012-3456-7890abcdef123', match_number: 3, participant1_id: participants[0].id, participant2_id: participants[3].id, round_number: 2, completed: false },
+    ];
+
+    // Insert matches
+    const { error: matchesError } = await supabase
+      .from('matches')
+      .insert(matches);
+
+    if (matchesError) {
+      console.error('Error inserting matches:', matchesError);
+      return { success: false, message: 'Gagal menambahkan data pertandingan: ' + matchesError.message };
+    }
+
+    // Create sample scores with detailed criteria
+    const roundScores = [];
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i];
+      
+      // Only create scores for matches with participants
+      if (match.participant1_id && match.participant2_id) {
+        for (let judgeIndex = 0; judgeIndex < judges.length; judgeIndex++) {
+          const judge = judges[judgeIndex];
+          
+          // Create scores for rounds 1-3
+          for (let round = 1; round <= 3; round++) {
+            // Generate random scores for each criteria
+            const p1_punches = Math.floor(Math.random() * 8) + 3; // 3-10
+            const p1_kicks = Math.floor(Math.random() * 8) + 3;   // 3-10
+            const p1_throws = Math.floor(Math.random() * 8) + 3;  // 3-10
+            
+            const p2_punches = Math.floor(Math.random() * 8) + 3; // 3-10
+            const p2_kicks = Math.floor(Math.random() * 8) + 3;   // 3-10
+            const p2_throws = Math.floor(Math.random() * 8) + 3;  // 3-10
+            
+            // Calculate totals
+            const p1_total = p1_punches + p1_kicks + p1_throws;
+            const p2_total = p2_punches + p2_kicks + p2_throws;
+            
+            roundScores.push({
+              match_id: match.id,
+              judge_id: judge.id,
+              round_number: round,
+              participant1_score: p1_total,
+              participant2_score: p2_total,
+              participant1_punches: p1_punches,
+              participant1_kicks: p1_kicks,
+              participant1_throws: p1_throws,
+              participant2_punches: p2_punches,
+              participant2_kicks: p2_kicks,
+              participant2_throws: p2_throws
+            });
+          }
+        }
       }
-    };
+    }
+    
+    if (roundScores.length > 0) {
+      const { error: scoresError } = await supabase
+        .from('round_scores')
+        .insert(roundScores);
+
+      if (scoresError) {
+        console.error('Error inserting round scores:', scoresError);
+        return { success: false, message: 'Gagal menambahkan data nilai: ' + scoresError.message };
+      }
+    }
+
+    return { success: true, message: 'Data sampel berhasil ditambahkan' };
   } catch (error) {
-    console.error("Error inserting sample data:", error);
-    return {
-      success: false,
-      message: "Gagal memasukkan data sampel",
-      error
-    };
+    console.error('Error inserting sample data:', error);
+    return { success: false, message: 'Terjadi kesalahan: ' + (error as Error).message };
   }
 };
 
 export const clearAllData = async () => {
   try {
-    // Clear all data from tables
-    await supabase.from('round_scores').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('judges').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('participants').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Delete data from round_scores table
+    const { error: scoresError } = await supabase
+      .from('round_scores')
+      .delete()
+      .neq('id', null); // Delete all rows
 
-    return {
-      success: true,
-      message: "Semua data berhasil dihapus"
-    };
+    if (scoresError) {
+      console.error('Error deleting round scores:', scoresError);
+      return { success: false, message: 'Gagal menghapus data nilai: ' + scoresError.message };
+    }
+
+    // Delete data from matches table
+    const { error: matchesError } = await supabase
+      .from('matches')
+      .delete()
+      .neq('id', null); // Delete all rows
+
+    if (matchesError) {
+      console.error('Error deleting matches:', matchesError);
+      return { success: false, message: 'Gagal menghapus data pertandingan: ' + matchesError.message };
+    }
+
+    // Delete data from judges table
+    const { error: judgesError } = await supabase
+      .from('judges')
+      .delete()
+      .neq('id', null); // Delete all rows
+
+    if (judgesError) {
+      console.error('Error deleting judges:', judgesError);
+      return { success: false, message: 'Gagal menghapus data hakim: ' + judgesError.message };
+    }
+
+    // Delete data from participants table
+    const { error: participantsError } = await supabase
+      .from('participants')
+      .delete()
+      .neq('id', null); // Delete all rows
+
+    if (participantsError) {
+      console.error('Error deleting participants:', participantsError);
+      return { success: false, message: 'Gagal menghapus data peserta: ' + participantsError.message };
+    }
+
+    return { success: true, message: 'Semua data berhasil dihapus' };
   } catch (error) {
-    console.error("Error clearing data:", error);
-    return {
-      success: false,
-      message: "Gagal menghapus data",
-      error
-    };
+    console.error('Error clearing data:', error);
+    return { success: false, message: 'Terjadi kesalahan: ' + (error as Error).message };
   }
 };

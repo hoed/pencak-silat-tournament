@@ -19,6 +19,8 @@ import {
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Pencil } from "lucide-react";
+import ScoringCriteria from "@/components/ScoringCriteria";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const JudgeDashboard = () => {
   const { currentUser, currentJudge, logoutUser, logoutJudge, currentMatchId, participants } = useTournament();
@@ -26,11 +28,24 @@ const JudgeDashboard = () => {
   const [matches, setMatches] = useState<any[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState<string>("");
   const [currentRound, setCurrentRound] = useState(1);
-  const [participant1Score, setParticipant1Score] = useState("");
-  const [participant2Score, setParticipant2Score] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousScores, setPreviousScores] = useState<any[]>([]);
   const [editingScoreId, setEditingScoreId] = useState<string | null>(null);
+  
+  // New state for detailed scoring
+  const [participant1Scores, setParticipant1Scores] = useState({
+    punches: 0,
+    kicks: 0,
+    throws: 0,
+    total: 0
+  });
+  
+  const [participant2Scores, setParticipant2Scores] = useState({
+    punches: 0,
+    kicks: 0,
+    throws: 0,
+    total: 0
+  });
   
   useEffect(() => {
     // Redirect if no user or judge is logged in
@@ -101,22 +116,40 @@ const JudgeDashboard = () => {
     navigate("/login");
   };
 
+  const updateParticipant1Score = (type: string, value: number) => {
+    setParticipant1Scores(prev => {
+      const newScores = { 
+        ...prev, 
+        [type]: value 
+      };
+      
+      // Calculate total
+      const total = Number(newScores.punches) + Number(newScores.kicks) + Number(newScores.throws);
+      return { ...newScores, total };
+    });
+  };
+
+  const updateParticipant2Score = (type: string, value: number) => {
+    setParticipant2Scores(prev => {
+      const newScores = { 
+        ...prev, 
+        [type]: value 
+      };
+      
+      // Calculate total
+      const total = Number(newScores.punches) + Number(newScores.kicks) + Number(newScores.throws);
+      return { ...newScores, total };
+    });
+  };
+
   const submitScore = async () => {
     if (!selectedMatchId) {
       toast.error("Mohon pilih pertandingan terlebih dahulu");
       return;
     }
     
-    if (!participant1Score || !participant2Score) {
+    if (participant1Scores.total === 0 || participant2Scores.total === 0) {
       toast.error("Mohon masukkan nilai untuk kedua peserta");
-      return;
-    }
-    
-    const p1Score = parseFloat(participant1Score);
-    const p2Score = parseFloat(participant2Score);
-    
-    if (isNaN(p1Score) || isNaN(p2Score) || p1Score < 0 || p1Score > 10 || p2Score < 0 || p2Score > 10) {
-      toast.error("Nilai harus antara 0 dan 10");
       return;
     }
     
@@ -128,14 +161,22 @@ const JudgeDashboard = () => {
         score => score.round_number === currentRound
       );
       
+      const scoreData = {
+        participant1_score: participant1Scores.total,
+        participant2_score: participant2Scores.total,
+        participant1_punches: participant1Scores.punches,
+        participant1_kicks: participant1Scores.kicks,
+        participant1_throws: participant1Scores.throws,
+        participant2_punches: participant2Scores.punches,
+        participant2_kicks: participant2Scores.kicks,
+        participant2_throws: participant2Scores.throws,
+      };
+      
       if (existingScore) {
         // Update existing score
         const { error } = await supabase
           .from('round_scores')
-          .update({
-            participant1_score: p1Score,
-            participant2_score: p2Score
-          })
+          .update(scoreData)
           .eq('id', existingScore.id);
         
         if (error) throw error;
@@ -147,8 +188,7 @@ const JudgeDashboard = () => {
             match_id: selectedMatchId,
             round_number: currentRound,
             judge_id: currentJudge?.id,
-            participant1_score: p1Score,
-            participant2_score: p2Score
+            ...scoreData
           });
         
         if (error) throw error;
@@ -168,8 +208,8 @@ const JudgeDashboard = () => {
       }
       
       // Reset form
-      setParticipant1Score("");
-      setParticipant2Score("");
+      setParticipant1Scores({ punches: 0, kicks: 0, throws: 0, total: 0 });
+      setParticipant2Scores({ punches: 0, kicks: 0, throws: 0, total: 0 });
       setEditingScoreId(null);
     } catch (error) {
       console.error('Error submitting score:', error);
@@ -181,8 +221,22 @@ const JudgeDashboard = () => {
 
   const handleEditScore = (score: any) => {
     setCurrentRound(score.round_number);
-    setParticipant1Score(score.participant1_score.toString());
-    setParticipant2Score(score.participant2_score.toString());
+    
+    // Set detailed scores if available, otherwise use legacy format
+    setParticipant1Scores({
+      punches: score.participant1_punches || 0,
+      kicks: score.participant1_kicks || 0,
+      throws: score.participant1_throws || 0,
+      total: score.participant1_score || 0
+    });
+    
+    setParticipant2Scores({
+      punches: score.participant2_punches || 0,
+      kicks: score.participant2_kicks || 0,
+      throws: score.participant2_throws || 0,
+      total: score.participant2_score || 0
+    });
+    
     setEditingScoreId(score.id);
   };
 
@@ -227,8 +281,8 @@ const JudgeDashboard = () => {
                     onValueChange={(value) => {
                       setSelectedMatchId(value);
                       setEditingScoreId(null); // Reset editing state when changing match
-                      setParticipant1Score("");
-                      setParticipant2Score("");
+                      setParticipant1Scores({ punches: 0, kicks: 0, throws: 0, total: 0 });
+                      setParticipant2Scores({ punches: 0, kicks: 0, throws: 0, total: 0 });
                     }}
                   >
                     <SelectTrigger className="w-full">
@@ -280,12 +334,24 @@ const JudgeDashboard = () => {
                           );
                           
                           if (existingScore) {
-                            setParticipant1Score(existingScore.participant1_score.toString());
-                            setParticipant2Score(existingScore.participant2_score.toString());
+                            setParticipant1Scores({
+                              punches: existingScore.participant1_punches || 0,
+                              kicks: existingScore.participant1_kicks || 0,
+                              throws: existingScore.participant1_throws || 0,
+                              total: existingScore.participant1_score || 0
+                            });
+                            
+                            setParticipant2Scores({
+                              punches: existingScore.participant2_punches || 0,
+                              kicks: existingScore.participant2_kicks || 0,
+                              throws: existingScore.participant2_throws || 0,
+                              total: existingScore.participant2_score || 0
+                            });
+                            
                             setEditingScoreId(existingScore.id);
                           } else {
-                            setParticipant1Score("");
-                            setParticipant2Score("");
+                            setParticipant1Scores({ punches: 0, kicks: 0, throws: 0, total: 0 });
+                            setParticipant2Scores({ punches: 0, kicks: 0, throws: 0, total: 0 });
                           }
                         }}
                       >
@@ -300,42 +366,110 @@ const JudgeDashboard = () => {
                       </Select>
                     </div>
                     
-                    {/* Scoring */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Nilai Sudut Merah (0-10)
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.5"
-                          placeholder="Masukkan nilai"
-                          value={participant1Score}
-                          onChange={(e) => setParticipant1Score(e.target.value)}
-                        />
+                    {/* Detailed Scoring */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      {/* Participant 1 Scoring */}
+                      <div className="border p-4 rounded-lg">
+                        <h3 className="font-semibold mb-3">Nilai Sudut Merah</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-sm">Pukulan (0-10)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              value={participant1Scores.punches}
+                              onChange={(e) => updateParticipant1Score('punches', parseFloat(e.target.value) || 0)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm">Tendangan (0-10)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              value={participant1Scores.kicks}
+                              onChange={(e) => updateParticipant1Score('kicks', parseFloat(e.target.value) || 0)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm">Jatuhan (0-10)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              value={participant1Scores.throws}
+                              onChange={(e) => updateParticipant1Score('throws', parseFloat(e.target.value) || 0)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="border-t pt-3 mt-3">
+                            <div className="flex justify-between items-center">
+                              <span className="font-semibold">Total:</span>
+                              <span className="text-xl font-bold">{participant1Scores.total}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Nilai Sudut Biru (0-10)
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.5"
-                          placeholder="Masukkan nilai"
-                          value={participant2Score}
-                          onChange={(e) => setParticipant2Score(e.target.value)}
-                        />
+
+                      {/* Participant 2 Scoring */}
+                      <div className="border p-4 rounded-lg">
+                        <h3 className="font-semibold mb-3">Nilai Sudut Biru</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-sm">Pukulan (0-10)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              value={participant2Scores.punches}
+                              onChange={(e) => updateParticipant2Score('punches', parseFloat(e.target.value) || 0)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm">Tendangan (0-10)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              value={participant2Scores.kicks}
+                              onChange={(e) => updateParticipant2Score('kicks', parseFloat(e.target.value) || 0)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm">Jatuhan (0-10)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              value={participant2Scores.throws}
+                              onChange={(e) => updateParticipant2Score('throws', parseFloat(e.target.value) || 0)}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div className="border-t pt-3 mt-3">
+                            <div className="flex justify-between items-center">
+                              <span className="font-semibold">Total:</span>
+                              <span className="text-xl font-bold">{participant2Scores.total}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
                     <Button 
                       onClick={submitScore} 
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-full bg-blue-600 hover:bg-blue-700 mt-4"
                       disabled={isSubmitting}
                     >
                       {isSubmitting 
@@ -348,34 +482,52 @@ const JudgeDashboard = () => {
                     
                     {/* Previous Scores */}
                     {previousScores.length > 0 && (
-                      <div className="mt-6">
-                        <h3 className="font-semibold mb-2">Nilai Sebelumnya</h3>
-                        <div className="space-y-3">
-                          {previousScores.map((score) => (
-                            <div key={score.id} className="bg-gray-50 p-3 rounded-lg">
-                              <div className="flex justify-between items-center mb-2">
-                                <Badge variant="outline">Ronde {score.round_number}</Badge>
-                                <Button
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditScore(score)}
-                                >
-                                  <Pencil className="h-4 w-4 mr-1" /> Edit
-                                </Button>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <span className="text-xs text-gray-500">Sudut Merah</span>
-                                  <p className="font-semibold">{score.participant1_score}</p>
-                                </div>
-                                <div>
-                                  <span className="text-xs text-gray-500">Sudut Biru</span>
-                                  <p className="font-semibold">{score.participant2_score}</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                      <div className="mt-8">
+                        <h3 className="font-semibold mb-4">Nilai Sebelumnya</h3>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Ronde</TableHead>
+                              <TableHead>Sudut Merah</TableHead>
+                              <TableHead>Sudut Biru</TableHead>
+                              <TableHead></TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {previousScores.map((score) => (
+                              <TableRow key={score.id}>
+                                <TableCell>
+                                  <Badge variant="outline">Ronde {score.round_number}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-semibold">{score.participant1_score}</div>
+                                  {(score.participant1_punches !== undefined) && (
+                                    <div className="text-xs text-gray-500">
+                                      P: {score.participant1_punches} | K: {score.participant1_kicks} | J: {score.participant1_throws}
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="font-semibold">{score.participant2_score}</div>
+                                  {(score.participant2_punches !== undefined) && (
+                                    <div className="text-xs text-gray-500">
+                                      P: {score.participant2_punches} | K: {score.participant2_kicks} | J: {score.participant2_throws}
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditScore(score)}
+                                  >
+                                    <Pencil className="h-4 w-4 mr-1" /> Edit
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
                     )}
                   </>

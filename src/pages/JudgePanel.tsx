@@ -113,8 +113,8 @@ const JudgePanel = () => {
               <h3 className="text-xl font-semibold mb-2">Dashboard Hakim Baru</h3>
               <p className="text-gray-500 mb-6">
                 Kami telah memperbarui sistem dan setiap hakim sekarang memiliki dashboard terpisah 
-                untuk memberikan penilaian. Hakim sekarang dapat mengedit nilai yang telah dimasukkan.
-                Silakan login untuk mengakses dashboard Anda.
+                untuk memberikan penilaian. Hakim sekarang dapat mengedit nilai yang telah dimasukkan
+                dan memberikan penilaian terperinci untuk pukulan, tendangan, dan jatuhan.
               </p>
               <Button onClick={handleJudgeLogin} className="bg-blue-600 hover:bg-blue-700">
                 Login Hakim
