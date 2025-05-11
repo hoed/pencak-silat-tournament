@@ -127,9 +127,18 @@ const Registration = () => {
       : [];
 
   function onSubmit(values: FormValues) {
+    // The form validation ensures all fields are filled
+    // Create new participant with required fields (non-optional)
     const newParticipant = {
       id: uuidv4(),
-      ...values,
+      fullName: values.fullName,
+      gender: values.gender,
+      ageCategory: values.ageCategory,
+      weightCategory: values.weightCategory,
+      organization: values.organization,
+      branch: values.branch,
+      subBranch: values.subBranch,
+      region: values.region,
     };
     
     addParticipant(newParticipant);
