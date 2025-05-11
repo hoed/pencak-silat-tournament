@@ -12,7 +12,7 @@ const Footer = () => {
           </div>
           
           <div className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} Pencak Silat Federation. All rights reserved.
+            &copy; {new Date().getFullYear()} Pencak Silat Nurharias. All rights reserved.
           </div>
         </div>
       </div>
