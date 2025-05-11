@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -83,6 +82,9 @@ type TournamentContextType = {
   loginJudge: (username: string, password: string) => Promise<boolean>;
   logoutUser: () => Promise<void>;
   logoutJudge: () => void;
+  fetchJudges: () => Promise<void>;
+  fetchParticipants: () => Promise<void>;
+  fetchMatches: () => Promise<void>;
 };
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
@@ -124,6 +126,71 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
       ]
     }
   ]);
+
+  // Define the fetch functions used in JudgePanel.tsx
+  const fetchParticipants = async () => {
+    const { data, error } = await supabase.from('participants').select('*');
+    if (error) {
+      console.error('Error fetching participants:', error);
+      return;
+    }
+    
+    if (data) {
+      const formattedData: Participant[] = data.map(p => ({
+        id: p.id,
+        fullName: p.full_name,
+        gender: p.gender as "Laki-laki" | "Perempuan",
+        dateOfBirth: p.date_of_birth,
+        ageCategory: p.age_category,
+        weightCategory: p.weight_category,
+        organization: p.organization,
+        branch: p.branch,
+        subBranch: p.sub_branch,
+        region: p.region
+      }));
+      setParticipants(formattedData);
+    }
+  };
+
+  const fetchJudges = async () => {
+    const { data, error } = await supabase.from('judges').select('id, full_name, judge_number, username');
+    if (error) {
+      console.error('Error fetching judges:', error);
+      return;
+    }
+    
+    if (data) {
+      const formattedData: Judge[] = data.map(j => ({
+        id: j.id,
+        fullName: j.full_name,
+        judgeNumber: j.judge_number,
+        username: j.username
+      }));
+      setJudges(formattedData);
+    }
+  };
+
+  const fetchMatches = async () => {
+    const { data, error } = await supabase.from('matches').select('*');
+    if (error) {
+      console.error('Error fetching matches:', error);
+      return;
+    }
+    
+    if (data) {
+      const formattedMatches: Match[] = data.map(m => ({
+        id: m.id,
+        participant1Id: m.participant1_id,
+        participant2Id: m.participant2_id,
+        rounds: [],
+        winnerId: m.winner_id,
+        matchNumber: m.match_number,
+        roundNumber: m.round_number,
+        completed: m.completed || false,
+      }));
+      setMatches(formattedMatches);
+    }
+  };
 
   useEffect(() => {
     // Check for current session
@@ -177,73 +244,7 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
 
     checkSession();
     
-    // Fetch participants from Supabase
-    const fetchParticipants = async () => {
-      const { data, error } = await supabase.from('participants').select('*');
-      if (error) {
-        console.error('Error fetching participants:', error);
-        return;
-      }
-      
-      if (data) {
-        const formattedData: Participant[] = data.map(p => ({
-          id: p.id,
-          fullName: p.full_name,
-          gender: p.gender as "Laki-laki" | "Perempuan", // Fixed type casting here
-          dateOfBirth: p.date_of_birth,
-          ageCategory: p.age_category,
-          weightCategory: p.weight_category,
-          organization: p.organization,
-          branch: p.branch,
-          subBranch: p.sub_branch,
-          region: p.region
-        }));
-        setParticipants(formattedData);
-      }
-    };
-
-    // Fetch judges from Supabase
-    const fetchJudges = async () => {
-      const { data, error } = await supabase.from('judges').select('id, full_name, judge_number, username');
-      if (error) {
-        console.error('Error fetching judges:', error);
-        return;
-      }
-      
-      if (data) {
-        const formattedData: Judge[] = data.map(j => ({
-          id: j.id,
-          fullName: j.full_name,
-          judgeNumber: j.judge_number,
-          username: j.username
-        }));
-        setJudges(formattedData);
-      }
-    };
-
-    // Fetch matches
-    const fetchMatches = async () => {
-      const { data, error } = await supabase.from('matches').select('*');
-      if (error) {
-        console.error('Error fetching matches:', error);
-        return;
-      }
-      
-      if (data) {
-        const formattedMatches: Match[] = data.map(m => ({
-          id: m.id,
-          participant1Id: m.participant1_id,
-          participant2Id: m.participant2_id,
-          rounds: [],
-          winnerId: m.winner_id,
-          matchNumber: m.match_number,
-          roundNumber: m.round_number,
-          completed: m.completed || false,
-        }));
-        setMatches(formattedMatches);
-      }
-    };
-
+    // Fetch data on component mount
     fetchParticipants();
     fetchJudges();
     fetchMatches();
@@ -399,7 +400,10 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
         loginUser,
         loginJudge,
         logoutUser,
-        logoutJudge
+        logoutJudge,
+        fetchJudges,
+        fetchParticipants,
+        fetchMatches
       }}
     >
       {children}
