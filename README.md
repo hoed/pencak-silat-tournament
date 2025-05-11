@@ -1,73 +1,99 @@
-# Welcome to your Lovable project
+Berikut adalah contoh `README.md` dalam **bahasa Indonesia** untuk proyek aplikasi turnamen Pencak Silat yang menggunakan Supabase sebagai basis datanya:
 
-## Project info
+---
 
-**URL**: https://lovable.dev/projects/6236902e-8943-4ef8-9671-fd425ac6ceb6
+````markdown
+# 🥋 Aplikasi Turnamen Pencak Silat
 
-## How can I edit this code?
+Aplikasi web untuk mengelola turnamen Pencak Silat secara digital. Aplikasi ini mendukung sistem penilaian oleh 3 juri, pencatatan peserta berdasarkan organisasi, dan pengelolaan bagan pertandingan secara otomatis. Data disimpan dan disinkronisasi menggunakan **Supabase**.
 
-There are several ways of editing your application.
+## 🚀 Fitur Utama
 
-**Use Lovable**
+- ✍️ **Formulir Pendaftaran Peserta**
+  - Nama lengkap, usia, jenis kelamin, kategori berat badan
+  - Organisasi → Cabang → Sub-cabang
+  - Wilayah asal
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6236902e-8943-4ef8-9671-fd425ac6ceb6) and start prompting.
+- ⚖️ **Sistem Penilaian oleh 3 Juri**
+  - Setiap pertandingan terdiri dari 3 ronde (1 menit per ronde)
+  - Juri memberikan nilai setiap ronde
+  - Perhitungan otomatis skor rata-rata dan penentuan pemenang
 
-Changes made via Lovable will be committed automatically to this repo.
+- 🏆 **Bagan Turnamen**
+  - Tampilan visual pertandingan secara eliminasi
+  - Update otomatis berdasarkan hasil pertandingan
 
-**Use your preferred IDE**
+- 🗂️ **Manajemen Organisasi**
+  - Klasifikasi peserta berdasarkan organisasi, cabang, dan sub-cabang
+  - Filter dan pencarian peserta
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- ⏱️ **Timer Pertandingan**
+  - Kontrol waktu pertandingan 1 menit per ronde
+  - Admin panel untuk kontrol alur pertandingan
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🧰 Teknologi yang Digunakan
 
-Follow these steps:
+- **Frontend**: React + Vite + TailwindCSS  
+- **Backend**: FastAPI (opsional, jika perlu server-side logic)  
+- **Database**: Supabase (PostgreSQL + Realtime)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🗃️ Struktur Database (Supabase)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+**Tabel Utama:**
+- `participants` — Data biodata peserta
+- `organizations` — Daftar organisasi, cabang, dan sub-cabang
+- `matches` — Jadwal dan hasil pertandingan
+- `scores` — Penilaian per ronde dari tiap juri
+- `judges` — Akun juri (opsional dengan autentikasi)
+  
+**Contoh Data Awal:**
+Supabase sudah diisi dengan data dummy:
+- 10 peserta
+- 2 organisasi, masing-masing dengan 2 cabang dan sub-cabang
+- 3 juri
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 📦 Instalasi Lokal
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+git clone https://github.com/namakamu/pencak-silat-tournament-app.git
+cd pencak-silat-tournament-app
+npm install
 npm run dev
+````
+
+> Pastikan Anda sudah mengatur `.env` dengan URL Supabase dan API Key Anda.
+
+## 🔐 Konfigurasi Supabase
+
+1. Buat proyek di [https://supabase.com](https://supabase.com)
+2. Salin `SUPABASE_URL` dan `SUPABASE_ANON_KEY`
+3. Tambahkan ke `.env`:
+
+```
+VITE_SUPABASE_URL=your-url
+VITE_SUPABASE_ANON_KEY=your-key
 ```
 
-**Edit a file directly in GitHub**
+4. Jalankan script SQL (akan disediakan) untuk membuat tabel dan mengisi data awal.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🛠️ TODO
 
-**Use GitHub Codespaces**
+* [ ] Tambahkan autentikasi juri dan admin
+* [ ] Fitur live scoring dengan Supabase Realtime
+* [ ] Statistik peserta dan pertandingan
+* [ ] Export hasil turnamen (PDF/Excel)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📄 Lisensi
 
-## What technologies are used for this project?
+Proyek ini bersifat open-source dengan lisensi MIT.
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Dibuat dengan ❤️ untuk mendukung digitalisasi olahraga bela diri tradisional Indonesia.
 
-## How can I deploy this project?
+```
 
-Simply open [Lovable](https://lovable.dev/projects/6236902e-8943-4ef8-9671-fd425ac6ceb6) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Jika kamu ingin, aku juga bisa bantu buatkan isi `.env.example`, struktur tabel Supabase SQL, atau file seeder-nya. Mau dilanjut ke bagian mana dulu?
+```
