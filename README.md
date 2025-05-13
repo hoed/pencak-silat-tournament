@@ -1,4 +1,4 @@
-# 🥋 Aplikasi Turnamen Pencak Silat
+# Aplikasi Turnamen Pencak Silat
 
 Aplikasi web untuk mengelola turnamen Pencak Silat secara digital. Aplikasi ini mendukung sistem penilaian oleh 3 juri, pencatatan peserta berdasarkan organisasi, dan pengelolaan bagan pertandingan secara otomatis. Data disimpan dan disinkronisasi menggunakan **Supabase**.
 
