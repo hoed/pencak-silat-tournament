@@ -26,13 +26,13 @@ Aplikasi web untuk mengelola turnamen Pencak Silat secara digital. Aplikasi ini 
   - Kontrol waktu pertandingan 1 menit per ronde
   - Admin panel untuk kontrol alur pertandingan
 
-## 🧰 Teknologi yang Digunakan
+## Teknologi yang Digunakan
 
 - **Frontend**: React + Vite + TailwindCSS  
 - **Backend**: FastAPI (opsional, jika perlu server-side logic)  
 - **Database**: Supabase (PostgreSQL + Realtime)
 
-## 🗃️ Struktur Database (Supabase)
+## Struktur Database (Supabase)
 
 **Tabel Utama:**
 - `participants` — Data biodata peserta
@@ -58,7 +58,7 @@ npm run dev
 
 > Pastikan Anda sudah mengatur `.env` dengan URL Supabase dan API Key Anda.
 
-## 🔐 Konfigurasi Supabase
+## Konfigurasi Supabase
 
 1. Buat proyek di [https://supabase.com](https://supabase.com)
 2. Salin `SUPABASE_URL` dan `SUPABASE_ANON_KEY`
@@ -78,7 +78,7 @@ VITE_SUPABASE_ANON_KEY=your-key
 * [ ] Statistik peserta dan pertandingan
 * [ ] Export hasil turnamen (PDF/Excel)
 
-## 📄 Lisensi
+## Lisensi
 
 Proyek ini bersifat open-source dengan lisensi MIT.
 
