@@ -1,9 +1,30 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
+// Define the correct type for a match
+type Match = {
+    id?: string;
+    match_number: number;
+    participant1_id?: string;
+    participant2_id?: string;
+    round_number: number;
+    completed?: boolean;
+    category: "bout" | "arts";  // Must be either "bout" or "arts"
+    winner_id?: string;
+    created_at?: string;
+}
+
 export const insertSampleData = async () => {
   try {
+    // Check for admin authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.email !== 'admin@admin.com') {
+      return {
+        success: false,
+        message: 'Admin authentication required to insert sample data',
+      };
+    }
+
     // Check if data already exists
     const { data: existingParticipants } = await supabase
       .from('participants')
@@ -27,9 +48,9 @@ export const insertSampleData = async () => {
     const judge2Id = uuidv4();
     const judge3Id = uuidv4();
     
-    const match1Id = uuidv4();
-    const match2Id = uuidv4();
-    const match3Id = uuidv4();
+    const match1Id = uuidv4(); // Bout match
+    const match2Id = uuidv4(); // Bout match
+    const match3Id = uuidv4(); // Arts match
 
     // Sample participants data
     const participants = [
@@ -90,7 +111,7 @@ export const insertSampleData = async () => {
 
     if (participantsError) {
       console.error('Error inserting participants:', participantsError);
-      return { success: false, message: 'Gagal menambahkan data peserta: ' + participantsError.message };
+      throw new Error('Gagal menambahkan data peserta: ' + participantsError.message);
     }
 
     // Sample judges data
@@ -107,14 +128,38 @@ export const insertSampleData = async () => {
 
     if (judgesError) {
       console.error('Error inserting judges:', judgesError);
-      return { success: false, message: 'Gagal menambahkan data hakim: ' + judgesError.message };
+      throw new Error('Gagal menambahkan data hakim: ' + judgesError.message);
     }
 
-    // Sample matches data
-    const matches = [
-      { id: match1Id, match_number: 1, participant1_id: participant1Id, participant2_id: participant2Id, round_number: 1, completed: false },
-      { id: match2Id, match_number: 2, participant1_id: participant3Id, participant2_id: participant4Id, round_number: 1, completed: false },
-      { id: match3Id, match_number: 3, participant1_id: participant1Id, participant2_id: participant4Id, round_number: 2, completed: false },
+    // Sample matches data (including Bout and Arts categories)
+    const matches: Match[] = [
+      { 
+        id: match1Id, 
+        match_number: 1, 
+        participant1_id: participant1Id, 
+        participant2_id: participant2Id, 
+        round_number: 1, 
+        completed: false,
+        category: 'bout'
+      },
+      { 
+        id: match2Id, 
+        match_number: 2, 
+        participant1_id: participant3Id, 
+        participant2_id: participant4Id, 
+        round_number: 1, 
+        completed: false,
+        category: 'bout'
+      },
+      { 
+        id: match3Id, 
+        match_number: 3, 
+        participant1_id: participant1Id, 
+        participant2_id: participant4Id, 
+        round_number: 1, 
+        completed: false,
+        category: 'arts'
+      },
     ];
 
     // Insert matches
@@ -124,7 +169,7 @@ export const insertSampleData = async () => {
 
     if (matchesError) {
       console.error('Error inserting matches:', matchesError);
-      return { success: false, message: 'Gagal menambahkan data pertandingan: ' + matchesError.message };
+      throw new Error('Gagal menambahkan data pertandingan: ' + matchesError.message);
     }
 
     // Create sample scores with detailed criteria
@@ -137,33 +182,78 @@ export const insertSampleData = async () => {
         for (let judgeIndex = 0; judgeIndex < judges.length; judgeIndex++) {
           const judge = judges[judgeIndex];
           
-          // Create scores for rounds 1-3
-          for (let round = 1; round <= 3; round++) {
-            // Generate random scores for each criteria
-            const p1_punches = Math.floor(Math.random() * 8) + 3; // 3-10
-            const p1_kicks = Math.floor(Math.random() * 8) + 3;   // 3-10
-            const p1_throws = Math.floor(Math.random() * 8) + 3;  // 3-10
+          if (match.category === 'bout') {
+            // Create scores for rounds 1-3 for Bout matches
+            for (let round = 1; round <= 3; round++) {
+              // Generate random scores for Bout criteria
+              const p1_punches = Math.floor(Math.random() * 8) + 3; // 3-10
+              const p1_kicks = Math.floor(Math.random() * 8) + 3;   // 3-10
+              const p1_throws = Math.floor(Math.random() * 8) + 3;  // 3-10
+              const p1_locks = Math.floor(Math.random() * 5);       // 0-4
+              const p1_fouls = Math.floor(Math.random() * 3);       // 0-2
+              
+              const p2_punches = Math.floor(Math.random() * 8) + 3; // 3-10
+              const p2_kicks = Math.floor(Math.random() * 8) + 3;   // 3-10
+              const p2_throws = Math.floor(Math.random() * 8) + 3;  // 3-10
+              const p2_locks = Math.floor(Math.random() * 5);       // 0-4
+              const p2_fouls = Math.floor(Math.random() * 3);       // 0-2
+              
+              // Calculate totals for Bout (1x punches, 2x kicks, 3x throws, 4x locks)
+              const p1_total = (p1_punches * 1) + (p1_kicks * 2) + (p1_throws * 3) + (p1_locks * 4);
+              const p2_total = (p2_punches * 1) + (p2_kicks * 2) + (p2_throws * 3) + (p2_locks * 4);
+              
+              roundScores.push({
+                id: uuidv4(),
+                match_id: match.id,
+                judge_id: judge.id,
+                round_number: round,
+                participant1_score: p1_total,
+                participant2_score: p2_total,
+                participant1_punches: p1_punches,
+                participant1_kicks: p1_kicks,
+                participant1_throws: p1_throws,
+                participant1_locks: p1_locks,
+                participant1_fouls: p1_fouls,
+                participant2_punches: p2_punches,
+                participant2_kicks: p2_kicks,
+                participant2_throws: p2_throws,
+                participant2_locks: p2_locks,
+                participant2_fouls: p2_fouls,
+                category: 'bout'
+              });
+            }
+          } else if (match.category === 'arts') {
+            // Create single score for Arts match (no rounds)
+            const p1_technique = Math.floor(Math.random() * 41) + 60; // 60-100
+            const p1_compactness = Math.floor(Math.random() * 41) + 60; // 60-100
+            const p1_expression = Math.floor(Math.random() * 41) + 60; // 60-100
+            const p1_timing = Math.floor(Math.random() * 41) + 60;     // 60-100
             
-            const p2_punches = Math.floor(Math.random() * 8) + 3; // 3-10
-            const p2_kicks = Math.floor(Math.random() * 8) + 3;   // 3-10
-            const p2_throws = Math.floor(Math.random() * 8) + 3;  // 3-10
+            const p2_technique = Math.floor(Math.random() * 41) + 60; // 60-100
+            const p2_compactness = Math.floor(Math.random() * 41) + 60; // 60-100
+            const p2_expression = Math.floor(Math.random() * 41) + 60; // 60-100
+            const p2Timing = Math.floor(Math.random() * 41) + 60;      // 60-100
             
-            // Calculate totals
-            const p1_total = p1_punches + p1_kicks + p1_throws;
-            const p2_total = p2_punches + p2_kicks + p2_throws;
+            // Calculate totals for Arts (weighted: 40% technique, 30% compactness, 20% expression, 10% timing)
+            const p1_total = (p1_technique * 0.4) + (p1_compactness * 0.3) + (p1_expression * 0.2) + (p1_timing * 0.1);
+            const p2_total = (p2_technique * 0.4) + (p2_compactness * 0.3) + (p2_expression * 0.2) + (p2Timing * 0.1);
             
             roundScores.push({
+              id: uuidv4(),
               match_id: match.id,
               judge_id: judge.id,
-              round_number: round,
+              round_number: 1, // Arts uses single "round"
               participant1_score: p1_total,
               participant2_score: p2_total,
-              participant1_punches: p1_punches,
-              participant1_kicks: p1_kicks,
-              participant1_throws: p1_throws,
-              participant2_punches: p2_punches,
-              participant2_kicks: p2_kicks,
-              participant2_throws: p2_throws
+              participant1_technique: p1_technique,
+              participant1_compactness: p1_compactness,
+              participant1_expression: p1_expression,
+              participant1_timing: p1_timing,
+              participant2_technique: p2_technique,
+              participant2_compactness: p2_compactness,
+              participant2_expression: p2_expression,
+              participant2_timing: p2Timing,
+              category: 'arts'
             });
           }
         }
@@ -177,66 +267,72 @@ export const insertSampleData = async () => {
 
       if (scoresError) {
         console.error('Error inserting round scores:', scoresError);
-        return { success: false, message: 'Gagal menambahkan data nilai: ' + scoresError.message };
+        throw new Error('Gagal menambahkan data nilai: ' + scoresError.message);
       }
     }
 
     return { success: true, message: 'Data sampel berhasil ditambahkan' };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error inserting sample data:', error);
-    return { success: false, message: 'Terjadi kesalahan: ' + (error as Error).message };
+    return { success: false, message: 'Terjadi kesalahan: ' + error.message };
   }
 };
 
 export const clearAllData = async () => {
   try {
-    // Delete data from round_scores table
+    // Check for admin authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session || session.user.email !== 'admin@admin.com') {
+      return {
+        success: false,
+        message: 'Admin authentication required to clear data',
+      };
+    }
+
+    // Delete data in reverse dependency order
     const { error: scoresError } = await supabase
       .from('round_scores')
       .delete()
-      .not('id', 'is', null); // Delete all rows
+      .not('id', 'is', null);
 
     if (scoresError) {
       console.error('Error deleting round scores:', scoresError);
-      return { success: false, message: 'Gagal menghapus data nilai: ' + scoresError.message };
+      throw new Error('Gagal menghapus data nilai: ' + scoresError.message);
     }
 
-    // Delete data from matches table
     const { error: matchesError } = await supabase
       .from('matches')
       .delete()
-      .not('id', 'is', null); // Delete all rows
+      .not('id', 'is', null);
 
     if (matchesError) {
       console.error('Error deleting matches:', matchesError);
-      return { success: false, message: 'Gagal menghapus data pertandingan: ' + matchesError.message };
+      throw new Error('Gagal menghapus data pertandingan: ' + matchesError.message);
     }
 
-    // Delete data from judges table
     const { error: judgesError } = await supabase
       .from('judges')
       .delete()
-      .not('id', 'is', null); // Delete all rows
+      .not('id', 'is', null);
 
     if (judgesError) {
       console.error('Error deleting judges:', judgesError);
-      return { success: false, message: 'Gagal menghapus data hakim: ' + judgesError.message };
+      throw new Error('Gagal menghapus data hakim: ' + judgesError.message);
     }
 
-    // Delete data from participants table
     const { error: participantsError } = await supabase
       .from('participants')
       .delete()
-      .not('id', 'is', null); // Delete all rows
+      .not('id', 'is', null);
 
     if (participantsError) {
       console.error('Error deleting participants:', participantsError);
-      return { success: false, message: 'Gagal menghapus data peserta: ' + participantsError.message };
+      throw new Error('Gagal menghapus data peserta: ' + participantsError.message);
     }
 
     return { success: true, message: 'Semua data berhasil dihapus' };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error clearing data:', error);
-    return { success: false, message: 'Terjadi kesalahan: ' + (error as Error).message };
+    return { success: false, message: 'Terjadi kesalahan: ' + error.message };
   }
 };
