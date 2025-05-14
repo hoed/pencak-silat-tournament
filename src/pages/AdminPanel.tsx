@@ -33,36 +33,36 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const AdminPanel = () => {
   const { participants, matches, updateMatch, currentMatchId, setCurrentMatchId } = useTournament();
   
   const [selectedMatch, setSelectedMatch] = useState<string>("");
   const [timerActive, setTimerActive] = useState(false);
-  const [time, setTime] = useState(60); // 60 seconds per round
+  const [time, setTime] = useState(120); // 2 minutes per round for Bout
   const [currentRound, setCurrentRound] = useState(1);
   const [roundBreak, setRoundBreak] = useState(false);
-  const [breakTime, setBreakTime] = useState(30); // 30 seconds break between rounds
+  const [breakTime, setBreakTime] = useState(60); // 1 minute break
   const [showCharts, setShowCharts] = useState(false);
+  const [matchScores, setMatchScores] = useState<any[]>([]);
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Load selected match if currentMatchId is set
     if (currentMatchId && !selectedMatch) {
       setSelectedMatch(currentMatchId);
     }
     
-    // Load matches from Supabase
     const fetchMatches = async () => {
       const { data, error } = await supabase.from('matches').select('*');
       if (error) {
         console.error("Error fetching matches:", error);
+        toast.error("Gagal mengambil data pertandingan");
         return;
       }
       
       if (data) {
-        // Convert Supabase data format to our app's format
         data.forEach(match => {
           updateMatch({
             id: match.id,
@@ -73,6 +73,7 @@ const AdminPanel = () => {
             matchNumber: match.match_number,
             roundNumber: match.round_number,
             completed: match.completed,
+            category: match.category || 'bout'
           });
         });
       }
@@ -82,18 +83,47 @@ const AdminPanel = () => {
   }, [currentMatchId, selectedMatch, updateMatch]);
 
   useEffect(() => {
+    if (selectedMatch) {
+      const fetchScores = async () => {
+        const { data, error } = await supabase
+          .from('round_scores')
+          .select('*, judges(full_name)')
+          .eq('match_id', selectedMatch);
+        
+        if (error) {
+          console.error('Error fetching scores:', error);
+          toast.error("Gagal mengambil skor");
+          return;
+        }
+        
+        setMatchScores(data || []);
+      };
+      
+      fetchScores();
+    }
+  }, [selectedMatch]);
+
+  useEffect(() => {
+    const currentMatch = matches.find(m => m.id === selectedMatch);
+    if (!currentMatch || currentMatch.category === 'arts') {
+      setTimerActive(false);
+      setTime(0);
+      setRoundBreak(false);
+      setCurrentRound(1);
+      return;
+    }
+
     if (timerActive && !roundBreak) {
       if (time > 0) {
         timerRef.current = setTimeout(() => {
           setTime(time - 1);
         }, 1000);
       } else {
-        // Time's up for this round
         setTimerActive(false);
         if (currentRound < 3) {
           toast.info(`Ronde ${currentRound} selesai! Memulai istirahat`);
           setRoundBreak(true);
-          setBreakTime(30);
+          setBreakTime(60);
         } else {
           toast.info("Pertandingan selesai!");
           completeMatch();
@@ -105,10 +135,9 @@ const AdminPanel = () => {
           setBreakTime(breakTime - 1);
         }, 1000);
       } else {
-        // Break time is over, start next round
         setRoundBreak(false);
         setCurrentRound(currentRound + 1);
-        setTime(60);
+        setTime(120);
         setTimerActive(true);
         toast.info(`Ronde ${currentRound + 1} dimulai!`);
       }
@@ -119,11 +148,17 @@ const AdminPanel = () => {
         clearTimeout(timerRef.current);
       }
     };
-  }, [timerActive, time, roundBreak, breakTime, currentRound]);
+  }, [timerActive, time, roundBreak, breakTime, currentRound, selectedMatch]);
 
   const startTimer = () => {
-    if (!selectedMatch) {
+    const match = matches.find(m => m.id === selectedMatch);
+    if (!selectedMatch || !match) {
       toast.error("Silakan pilih pertandingan terlebih dahulu");
+      return;
+    }
+    
+    if (match.category === 'arts') {
+      toast.info("Kategori Seni tidak menggunakan timer");
       return;
     }
     
@@ -138,16 +173,20 @@ const AdminPanel = () => {
 
   const resetTimer = () => {
     setTimerActive(false);
-    setTime(60);
+    setTime(120);
     setRoundBreak(false);
-    setBreakTime(30);
+    setBreakTime(60);
+    setCurrentRound(1);
   };
 
   const nextRound = () => {
+    const match = matches.find(m => m.id === selectedMatch);
+    if (!match || match.category === 'arts') return;
+    
     if (currentRound < 3) {
       setTimerActive(false);
       setRoundBreak(true);
-      setBreakTime(30);
+      setBreakTime(60);
     } else {
       toast.info("Ini adalah ronde terakhir!");
       completeMatch();
@@ -158,70 +197,151 @@ const AdminPanel = () => {
     if (!selectedMatch) return;
     
     const match = matches.find(m => m.id === selectedMatch);
-    if (!match) return;
+    if (!match) {
+      toast.error("Pertandingan tidak ditemukan");
+      return;
+    }
 
-    // Calculate average scores
+    const { data: scores, error } = await supabase
+      .from('round_scores')
+      .select('*')
+      .eq('match_id', match.id);
+
+    if (error) {
+      console.error('Error fetching scores:', error);
+      toast.error("Gagal mengambil skor");
+      return;
+    }
+
     let p1TotalScore = 0;
     let p2TotalScore = 0;
-    let totalJudgeScores = 0;
-    
-    match.rounds.forEach(round => {
-      // Get all judge scores for this round
-      const keys = Object.keys(round.scores);
-      keys.forEach(key => {
-        if (key.includes('participant1')) {
-          p1TotalScore += round.scores[key];
-          totalJudgeScores++;
-        } else if (key.includes('participant2')) {
-          p2TotalScore += round.scores[key];
-        }
-      });
-    });
+    let p1Fouls = 0;
+    let p2Fouls = 0;
+    let p1TechnicalScore = 0;
+    let p2TechnicalScore = 0;
 
-    const p1AvgScore = totalJudgeScores > 0 ? p1TotalScore / (totalJudgeScores / 2) : 0;
-    const p2AvgScore = totalJudgeScores > 0 ? p2TotalScore / (totalJudgeScores / 2) : 0;
-    
-    // Determine winner
-    let winnerId = null;
-    if (p1AvgScore > p2AvgScore) {
-      winnerId = match.participant1Id;
-    } else if (p2AvgScore > p1AvgScore) {
-      winnerId = match.participant2Id;
+    if (match.category === 'bout') {
+      scores.forEach(score => {
+        p1TotalScore += score.participant1_score;
+        p2TotalScore += score.participant2_score;
+        p1Fouls += score.participant1_fouls || 0;
+        p2Fouls += score.participant2_fouls || 0;
+        p1TechnicalScore += (score.participant1_punches || 0) + (score.participant1_kicks || 0);
+        p2TechnicalScore += (score.participant2_punches || 0) + (score.participant2_kicks || 0);
+      });
     } else {
-      // It's a draw - in real tournament you'd need tie-breaking rules
+      scores.forEach(score => {
+        p1TotalScore += score.participant1_score;
+        p2TotalScore += score.participant2_score;
+      });
+    }
+
+    let winnerId = null;
+    let isDraw = false;
+    if (p1TotalScore > p2TotalScore) {
+      winnerId = match.participant1Id;
+    } else if (p2TotalScore > p1TotalScore) {
+      winnerId = match.participant2Id;
+    } else if (match.category === 'bout') {
+      if (p1Fouls < p2Fouls) {
+        winnerId = match.participant1Id;
+      } else if (p2Fouls < p1Fouls) {
+        winnerId = match.participant2Id;
+      } else if (p1TechnicalScore > p2TechnicalScore) {
+        winnerId = match.participant1Id;
+      } else if (p2TechnicalScore > p1TechnicalScore) {
+        winnerId = match.participant2Id;
+      } else {
+        isDraw = true;
+        toast.info("Pertandingan berakhir seri! Memerlukan ronde tambahan.");
+      }
+    } else {
+      isDraw = true;
       toast.info("Pertandingan berakhir seri!");
     }
-    
-    // Update match with winner and completed status
+
     const updatedMatch = {
       ...match,
       winnerId,
-      completed: true
+      completed: !isDraw
     };
     
     updateMatch(updatedMatch);
     
-    // Update in Supabase
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('matches')
       .update({
         winner_id: winnerId,
-        completed: true
+        completed: !isDraw
       })
       .eq('id', match.id);
       
-    if (error) {
-      console.error('Error updating match in database:', error);
+    if (updateError) {
+      console.error('Error updating match in database:', updateError);
       toast.error("Gagal menyimpan hasil pertandingan ke database");
+      return;
     }
     
-    setTimerActive(false);
-    setSelectedMatch("");
-    setCurrentMatchId(null);
-    setCurrentRound(1);
-    setTime(60);
+    if (!isDraw) {
+      setTimerActive(false);
+      setSelectedMatch("");
+      setCurrentMatchId(null);
+      setCurrentRound(1);
+      setTime(120);
+      setRoundBreak(false);
+      setBreakTime(60);
+      
+      const winner = participants.find(p => p.id === winnerId);
+      toast.success(`Pertandingan selesai! Pemenang: ${winner?.fullName || "Tidak ditentukan"}`);
+    }
+  };
+
+  const createDemoMatch = async () => {
+    if (participants.length < 2) {
+      toast.error("Butuh minimal 2 peserta untuk membuat pertandingan demo");
+      return;
+    }
+
+    const participant1 = participants[0];
+    const participant2 = participants[1];
     
-    toast.success("Pertandingan selesai dan pemenang ditentukan!");
+    const matchNumber = matches.length + 1;
+    
+    const { data, error } = await supabase
+      .from('matches')
+      .insert({
+        id: uuidv4(),
+        participant1_id: participant1.id,
+        participant2_id: participant2.id,
+        match_number: matchNumber,
+        round_number: 1,
+        completed: false,
+        category: 'bout'
+      })
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating match in database:', error);
+      toast.error("Gagal membuat pertandingan demo di database");
+      return;
+    }
+    
+    const newMatch = {
+      id: data.id,
+      participant1Id: participant1.id,
+      participant2Id: participant2.id,
+      rounds: [],
+      winnerId: null,
+      matchNumber: matchNumber,
+      roundNumber: 1,
+      completed: false,
+      category: 'bout' as 'bout'
+    };
+    
+    updateMatch(newMatch);
+    setSelectedMatch(newMatch.id);
+    toast.success("Pertandingan demo dibuat!");
   };
 
   const currentMatchObj = matches.find(match => match.id === selectedMatch);
@@ -234,55 +354,6 @@ const AdminPanel = () => {
     ? participants.find(p => p.id === currentMatchObj.participant2Id)
     : null;
 
-  // Create a demo match if needed
-  const createDemoMatch = async () => {
-    if (participants.length < 2) {
-      toast.error("Butuh minimal 2 peserta untuk membuat pertandingan demo");
-      return;
-    }
-
-    const participant1 = participants[0];
-    const participant2 = participants[1];
-    
-    const matchNumber = matches.length + 1;
-    
-    // Create in Supabase first
-    const { data, error } = await supabase
-      .from('matches')
-      .insert({
-        participant1_id: participant1.id,
-        participant2_id: participant2.id,
-        match_number: matchNumber,
-        round_number: 1,
-        completed: false
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error('Error creating match in database:', error);
-      toast.error("Gagal membuat pertandingan demo di database");
-      return;
-    }
-    
-    // Add to local state
-    const newMatch = {
-      id: data.id,
-      participant1Id: participant1.id,
-      participant2Id: participant2.id,
-      rounds: [],
-      winnerId: null,
-      matchNumber: matchNumber,
-      roundNumber: 1, // first round of tournament
-      completed: false
-    };
-    
-    updateMatch(newMatch);
-    setSelectedMatch(newMatch.id);
-    toast.success("Pertandingan demo dibuat!");
-  };
-
-  // Charts data
   const participantsByGender = [
     { name: 'Laki-laki', value: participants.filter(p => p.gender === 'Laki-laki').length },
     { name: 'Perempuan', value: participants.filter(p => p.gender === 'Perempuan').length }
@@ -304,7 +375,7 @@ const AdminPanel = () => {
 
   return (
     <MainLayout>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <Tabs defaultValue="match-control">
           <TabsList className="w-full mb-6">
             <TabsTrigger value="match-control" className="flex-1">Pengaturan Pertandingan</TabsTrigger>
@@ -323,7 +394,6 @@ const AdminPanel = () => {
               
               <CardContent>
                 <div className="space-y-6">
-                  {/* Match Selection */}
                   <div>
                     <label className="block text-sm font-medium mb-2">Pilih Pertandingan</label>
                     <div className="flex flex-col md:flex-row gap-2">
@@ -337,7 +407,7 @@ const AdminPanel = () => {
                         <SelectContent>
                           {matches.filter(m => !m.completed).map((match) => (
                             <SelectItem key={match.id} value={match.id}>
-                              Pertandingan #{match.matchNumber}
+                              Pertandingan #{match.matchNumber} ({match.category.toUpperCase()})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -349,17 +419,14 @@ const AdminPanel = () => {
                     </div>
                   </div>
                   
-                  {/* Match Info */}
                   {currentMatchObj && (
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-semibold mb-2">Pertandingan #{currentMatchObj.matchNumber}</h3>
-                      
+                      <h3 className="font-semibold mb-2">Pertandingan #{currentMatchObj.matchNumber} ({currentMatchObj.category.toUpperCase()})</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div className="border p-3 rounded-lg bg-white">
                           <span className="text-xs text-gray-500 block mb-1">SUDUT MERAH</span>
                           <h3 className="font-bold">{participant1?.fullName || "Belum ditentukan"}</h3>
                         </div>
-                        
                         <div className="border p-3 rounded-lg bg-white">
                           <span className="text-xs text-gray-500 block mb-1">SUDUT BIRU</span>
                           <h3 className="font-bold">{participant2?.fullName || "Belum ditentukan"}</h3>
@@ -368,90 +435,112 @@ const AdminPanel = () => {
                     </div>
                   )}
                   
-                  {/* Timer Display */}
-                  <div className="text-center py-6 px-4 bg-gray-900 rounded-xl">
-                    <div className="mb-4">
-                      {roundBreak ? (
-                        <Badge variant="outline" className="text-amber-400 border-amber-400 text-sm px-3 py-1">
-                          WAKTU ISTIRAHAT
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-green-400 border-green-400 text-sm px-3 py-1">
-                          RONDE {currentRound} dari 3
-                        </Badge>
-                      )}
+                  {currentMatchObj && currentMatchObj.category === 'bout' && (
+                    <div className="text-center py-6 px-4 bg-gray-900 rounded-xl">
+                      <div className="mb-4">
+                        {roundBreak ? (
+                          <Badge variant="outline" className="text-amber-400 border-amber-400 text-sm px-3 py-1">
+                            WAKTU ISTIRAHAT
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-green-400 border-green-400 text-sm px-3 py-1">
+                            RONDE {currentRound} dari 3
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-6xl font-bold font-mono text-white">
+                        {roundBreak
+                          ? `${Math.floor(breakTime / 60)}:${(breakTime % 60).toString().padStart(2, '0')}`
+                          : `${Math.floor(time / 60)}:${(time % 60).toString().padStart(2, '0')}`}
+                      </div>
                     </div>
-                    
-                    <div className="text-6xl font-bold font-mono text-white">
-                      {roundBreak
-                        ? `00:${breakTime < 10 ? `0${breakTime}` : breakTime}`
-                        : `00:${time < 10 ? `0${time}` : time}`}
-                    </div>
-                  </div>
+                  )}
                   
-                  {/* Timer Controls */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {timerActive ? (
-                      <Button onClick={pauseTimer} variant="outline" className="border-amber-500 text-amber-500">
-                        Jeda
+                  {currentMatchObj && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {currentMatchObj.category === 'bout' && (
+                        <>
+                          {timerActive ? (
+                            <Button onClick={pauseTimer} variant="outline" className="border-amber-500 text-amber-500">
+                              Jeda
+                            </Button>
+                          ) : (
+                            <Button onClick={startTimer} className="bg-green-600 hover:bg-green-700">
+                              Mulai
+                            </Button>
+                          )}
+                          <Button onClick={resetTimer} variant="outline">
+                            Reset
+                          </Button>
+                          <Button onClick={nextRound} variant="outline">
+                            Ronde Berikutnya
+                          </Button>
+                        </>
+                      )}
+                      <Button onClick={completeMatch} variant="destructive">
+                        Akhiri Pertandingan
                       </Button>
-                    ) : (
-                      <Button onClick={startTimer} className="bg-green-600 hover:bg-green-700">
-                        Mulai
-                      </Button>
-                    )}
-                    
-                    <Button onClick={resetTimer} variant="outline">
-                      Reset
-                    </Button>
-                    
-                    <Button onClick={nextRound} variant="outline">
-                      Ronde Berikutnya
-                    </Button>
-                    
-                    <Button onClick={completeMatch} variant="destructive">
-                      Akhiri Pertandingan
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Match Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Status Pertandingan</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {matches.length === 0 ? (
-                    <p className="text-gray-500">Belum ada pertandingan yang dijadwalkan</p>
-                  ) : (
-                    matches.map((match) => {
-                      const p1 = participants.find(p => p.id === match.participant1Id);
-                      const p2 = participants.find(p => p.id === match.participant2Id);
-                      
-                      return (
-                        <div key={match.id} className="flex justify-between items-center border p-3 rounded-md">
-                          <div>
-                            <span className="font-medium">Pertandingan #{match.matchNumber}</span>
-                            <div className="text-sm text-gray-600">
-                              {p1?.fullName || "Belum ditentukan"} vs {p2?.fullName || "Belum ditentukan"}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            {match.completed ? (
-                              <Badge className="bg-green-600">Selesai</Badge>
-                            ) : match.id === currentMatchId ? (
-                              <Badge className="bg-blue-600">Berlangsung</Badge>
-                            ) : (
-                              <Badge variant="outline">Tertunda</Badge>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
+                    </div>
+                  )}
+                  
+                  {currentMatchObj && matchScores.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="font-semibold mb-4">Skor Pertandingan</h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Hakim</TableHead>
+                            <TableHead>Ronde</TableHead>
+                            <TableHead>Sudut Merah</TableHead>
+                            <TableHead>Sudut Biru</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {matchScores.map((score) => (
+                            <TableRow key={score.id}>
+                              <TableCell>{score.judges.full_name}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {currentMatchObj.category === 'bout' ? `Ronde ${score.round_number}` : 'Seni'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-semibold">{score.participant1_score.toFixed(2)}</div>
+                                {score.category === 'bout' && (
+                                  <div className="text-xs text-gray-500">
+                                    P: {score.participant1_punches || 0} | K: {score.participant1_kicks || 0} | 
+                                    J: {score.participant1_throws || 0} | L: {score.participant1_locks || 0} | 
+                                    F: {score.participant1_fouls || 0}
+                                  </div>
+                                )}
+                                {score.category === 'arts' && (
+                                  <div className="text-xs text-gray-500">
+                                    T: {score.participant1_technique || 0} | C: {score.participant1_compactness || 0} | 
+                                    E: {score.participant1_expression || 0} | W: {score.participant1_timing || 0}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-semibold">{score.participant2_score.toFixed(2)}</div>
+                                {score.category === 'bout' && (
+                                  <div className="text-xs text-gray-500">
+                                    P: {score.participant2_punches || 0} | K: {score.participant2_kicks || 0} | 
+                                    J: {score.participant2_throws || 0} | L: {score.participant2_locks || 0} | 
+                                    F: {score.participant2_fouls || 0}
+                                  </div>
+                                )}
+                                {score.category === 'arts' && (
+                                  <div className="text-xs text-gray-500">
+                                    T: {score.participant2_technique || 0} | C: {score.participant2_compactness || 0} | 
+                                    E: {score.participant2_expression || 0} | W: {score.participant2_timing || 0}
+                                  </div>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -462,115 +551,114 @@ const AdminPanel = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Manajemen Turnamen</CardTitle>
-                <p className="text-gray-500">
-                  Kelola jadwal dan struktur turnamen
-                </p>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <h3 className="text-xl font-semibold mb-3">
-                    Fitur lengkap manajemen turnamen
-                  </h3>
-                  <p className="text-gray-500 mb-6 max-w-xl mx-auto">
-                    Data peserta dan pertandingan sudah otomatis tersimpan ke database Supabase.
-                    Anda dapat mengelola seluruh turnamen melalui panel ini.
-                  </p>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700">
-                    Buat Bagan Pertandingan
-                  </Button>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold mb-2">Daftar Peserta</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nama</TableHead>
+                          <TableHead>Jenis Kelamin</TableHead>
+                          <TableHead>Kategori</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {participants.map(participant => (
+                          <TableRow key={participant.id}>
+                            <TableCell>{participant.fullName}</TableCell>
+                            <TableCell>{participant.gender}</TableCell>
+                            <TableCell>{participant.weightCategory}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
           
           <TabsContent value="charts">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Statistik Peserta dan Pertandingan</CardTitle>
-                  <p className="text-gray-500">
-                    Visualisasi data turnamen
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Gender Distribution Chart */}
-                    <div className="border rounded-lg p-4">
-                      <h3 className="font-medium mb-4 text-center">Distribusi Jenis Kelamin Peserta</h3>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={participantsByGender}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="value"
-                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {participantsByGender.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => [`${value} peserta`, 'Jumlah']} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                    
-                    {/* Match Status Chart */}
-                    <div className="border rounded-lg p-4">
-                      <h3 className="font-medium mb-4 text-center">Status Pertandingan</h3>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={matchesByStatus}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="value"
-                              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {matchesByStatus.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip formatter={(value) => [`${value} pertandingan`, 'Jumlah']} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                    
-                    {/* Weight Categories Chart */}
-                    <div className="border rounded-lg p-4 md:col-span-2">
-                      <h3 className="font-medium mb-4 text-center">Peserta per Kategori Berat</h3>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={participantsByCategory}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            <Card>
+              <CardHeader>
+                <CardTitle>Statistik Turnamen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="font-semibold mb-4">Peserta Berdasarkan Jenis Kelamin</h3>
+                    <ChartContainer
+                      config={{
+                        value: { label: "Jumlah", color: "hsl(var(--chart-1))" },
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={participantsByGender}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            label
                           >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => [`${value} peserta`, 'Jumlah']} />
-                            <Legend />
-                            <Bar dataKey="value" fill="#8884d8" name="Jumlah Peserta" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
+                            {participantsByGender.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-4">Status Pertandingan</h3>
+                    <ChartContainer
+                      config={{
+                        value: { label: "Jumlah", color: "hsl(var(--chart-2))" },
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={matchesByStatus}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Legend />
+                          <Bar dataKey="value" fill="#00C49F" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-4">Peserta Berdasarkan Kategori Berat</h3>
+                    <ChartContainer
+                      config={{
+                        value: { label: "Jumlah", color: "hsl(var(--chart-3))" },
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={participantsByCategory}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Legend />
+                          <Bar dataKey="value" fill="#FFBB28" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -46,6 +46,7 @@ export type Database = {
           participant2_id: string | null
           round_number: number
           winner_id: string | null
+          category: 'bout' | 'arts' // Added category field
         }
         Insert: {
           completed?: boolean | null
@@ -56,6 +57,7 @@ export type Database = {
           participant2_id?: string | null
           round_number: number
           winner_id?: string | null
+          category?: 'bout' | 'arts'
         }
         Update: {
           completed?: boolean | null
@@ -66,6 +68,7 @@ export type Database = {
           participant2_id?: string | null
           round_number?: number
           winner_id?: string | null
+          category?: 'bout' | 'arts'
         }
         Relationships: [
           {
@@ -139,27 +142,84 @@ export type Database = {
           id: string
           judge_id: string
           match_id: string
+          round_number: number
           participant1_score: number
           participant2_score: number
-          round_number: number
+          participant1_punches: number | null
+          participant1_kicks: number | null
+          participant1_throws: number | null
+          participant1_locks: number | null
+          participant2_punches: number | null
+          participant2_kicks: number | null
+          participant2_throws: number | null
+          participant2_locks: number | null
+          participant1_fouls: number | null
+          participant2_fouls: number | null
+          participant1_technique: number | null
+          participant1_compactness: number | null
+          participant1_expression: number | null
+          participant1_timing: number | null
+          participant2_technique: number | null
+          participant2_compactness: number | null
+          participant2_expression: number | null
+          participant2_timing: number | null
+          category: 'bout' | 'arts'
         }
         Insert: {
           created_at?: string
           id?: string
           judge_id: string
           match_id: string
+          round_number: number
           participant1_score: number
           participant2_score: number
-          round_number: number
+          participant1_punches?: number | null
+          participant1_kicks?: number | null
+          participant1_throws?: number | null
+          participant1_locks?: number | null
+          participant2_punches?: number | null
+          participant2_kicks?: number | null
+          participant2_throws?: number | null
+          participant2_locks?: number | null
+          participant1_fouls?: number | null
+          participant2_fouls?: number | null
+          participant1_technique?: number | null
+          participant1_compactness?: number | null
+          participant1_expression?: number | null
+          participant1_timing?: number | null
+          participant2_technique?: number | null
+          participant2_compactness?: number | null
+          participant2_expression?: number | null
+          participant2_timing?: number | null
+          category: 'bout' | 'arts'
         }
         Update: {
           created_at?: string
           id?: string
           judge_id?: string
           match_id?: string
+          round_number?: number
           participant1_score?: number
           participant2_score?: number
-          round_number?: number
+          participant1_punches?: number | null
+          participant1_kicks?: number | null
+          participant1_throws?: number | null
+          participant1_locks?: number | null
+          participant2_punches?: number | null
+          participant2_kicks?: number | null
+          participant2_throws?: number | null
+          participant2_locks?: number | null
+          participant1_fouls?: number | null
+          participant2_fouls?: number | null
+          participant1_technique?: number | null
+          participant1_compactness?: number | null
+          participant1_expression?: number | null
+          participant1_timing?: number | null
+          participant2_technique?: number | null
+          participant2_compactness?: number | null
+          participant2_expression?: number | null
+          participant2_timing?: number | null
+          category?: 'bout' | 'arts'
         }
         Relationships: [
           {

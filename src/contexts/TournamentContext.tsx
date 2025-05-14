@@ -32,12 +32,34 @@ export type Participant = {
   region: string;
 };
 
+export type RoundScore = {
+  judgeId: string;
+  participant1Score: number;
+  participant2Score: number;
+  participant1Punches?: number;
+  participant1Kicks?: number;
+  participant1Throws?: number;
+  participant1Locks?: number;
+  participant2Punches?: number;
+  participant2Kicks?: number;
+  participant2Throws?: number;
+  participant2Locks?: number;
+  participant1Fouls?: number;
+  participant2Fouls?: number;
+  participant1Technique?: number;
+  participant1Compactness?: number;
+  participant1Expression?: number;
+  participant1Timing?: number;
+  participant2Technique?: number;
+  participant2Compactness?: number;
+  participant2Expression?: number;
+  participant2Timing?: number;
+};
+
 export type Round = {
   id: string;
   number: number;
-  scores: {
-    [judgeId: string]: number;
-  };
+  scores: RoundScore[];
 };
 
 export type Match = {
@@ -47,16 +69,9 @@ export type Match = {
   rounds: Round[];
   winnerId: string | null;
   matchNumber: number;
-  roundNumber: number; // tournament round (e.g., quarter-finals, semi-finals)
-  completed: boolean;
-};
-
-export type JudgeScore = {
-  judgeId: string;
-  matchId: string;
   roundNumber: number;
-  participant1Score: number;
-  participant2Score: number;
+  completed: boolean;
+  category: 'bout' | 'arts';
 };
 
 export type Judge = {
@@ -127,7 +142,6 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
     }
   ]);
 
-  // Define the fetch functions used in JudgePanel.tsx
   const fetchParticipants = async () => {
     const { data, error } = await supabase.from('participants').select('*');
     if (error) {
@@ -187,19 +201,18 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
         matchNumber: m.match_number,
         roundNumber: m.round_number,
         completed: m.completed || false,
+        category: m.category || 'bout'
       }));
       setMatches(formattedMatches);
     }
   };
 
   useEffect(() => {
-    // Check for current session
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const { user } = session;
         
-        // Determine user role based on email
         let role: UserRole = 'participant';
         if (user.email === 'admin@admin.com') {
           role = 'admin';
@@ -217,11 +230,9 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session && session.user) {
-          // Determine user role based on email
           let role: UserRole = 'participant';
           if (session.user.email === 'admin@admin.com') {
             role = 'admin';
@@ -244,7 +255,6 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
 
     checkSession();
     
-    // Fetch data on component mount
     fetchParticipants();
     fetchJudges();
     fetchMatches();
@@ -268,7 +278,6 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (data.user) {
-        // Determine user role based on email
         let role: UserRole = 'participant';
         if (email === 'admin@admin.com') {
           role = 'admin';
@@ -309,10 +318,8 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addParticipant = async (participant: Participant) => {
-    // Add to local state
     setParticipants(prev => [...prev, participant]);
     
-    // Add to Supabase
     const { error } = await supabase.from('participants').insert({
       id: participant.id,
       full_name: participant.fullName,
@@ -359,7 +366,6 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
       username: data.username
     });
     
-    // Store judge info in local storage for persistence
     localStorage.setItem('currentJudge', JSON.stringify({
       id: data.id,
       fullName: data.full_name,
@@ -375,7 +381,6 @@ export const TournamentProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('currentJudge');
   };
   
-  // Check if judge is already logged in from local storage
   useEffect(() => {
     const storedJudge = localStorage.getItem('currentJudge');
     if (storedJudge) {
